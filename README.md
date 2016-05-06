@@ -16,6 +16,8 @@ When you're ready, connect the Feather board to your computer and upload the cod
 To control the bot you'll need to download the Adafruit Bluefruit Connect LE app for your smartphone or use the ABLE app on a laptop. 
 
 iOS:  https://itunes.apple.com/us/app/adafruit-bluefruit-le-connect/id830125974?mt=8
+
 Andriod: https://play.google.com/store/apps/details?id=com.adafruit.bluefruit.le.connect&hl=en
+
 laptop: https://github.com/adafruit/adafruit-bluefruit-le-desktop/releases
 
