@@ -26,12 +26,16 @@
 
 #include "BluefruitConfig.h"
 
-Servo myservo;
+String BROADCAST_NAME = "InsertBotNameHere";
+ 
+String BROADCAST_CMD = String("AT+GAPDEVNAME=" + BROADCAST_NAME);
+
+Servo myServo;
 
 //Motor A
-int PWMA = 9; //Speed control 
-int AIN1 = 6; //Direction
-int AIN2 = 5; //Direction
+int PWMA = 5; //Speed control 
+int AIN1 = 9; //Direction
+int AIN2 = 6; //Direction
 
 //Motor B
 int PWMB = 10; //Speed control
@@ -50,11 +54,12 @@ void error(const __FlashStringHelper*err) {
 // function prototypes over in packetparser.cpp
 uint8_t readPacket(Adafruit_BLE *ble, uint16_t timeout);
 float parsefloat(uint8_t *buffer);
-void printHex(const uint8_t * data, const uint32_t numBytes);
+//void printHex(const uint8_t * data, const uint32_t numBytes);
 
 // the packet buffer
 extern uint8_t packetbuffer[];
 
+char buf[60];
 
 void setup(void)
 {
@@ -65,9 +70,8 @@ void setup(void)
   pinMode(A1, INPUT);   //IR sensor pin set to INPUT
   pinMode(A2, OUTPUT);  //indicator buzzer on Analog Pin 2
 
-  myservo.attach(5);
-  myservo.write(90);
-
+  myServo.attach(13);
+  
   pinMode(PWMA, OUTPUT);
   pinMode(AIN1, OUTPUT);
   pinMode(AIN2, OUTPUT);
@@ -94,6 +98,24 @@ void setup(void)
   if (! ble.factoryReset() ){
        error(F("Couldn't factory reset"));
   }
+
+//Convert the name change command to a char array
+  BROADCAST_CMD.toCharArray(buf, 60);
+ 
+  //Change the broadcast device name here!
+  if(ble.sendCommandCheckOK(buf)){
+    Serial.println("name changed");
+  }
+  delay(250);
+ 
+  //reset to take effect
+  if(ble.sendCommandCheckOK("ATZ")){
+    Serial.println("resetting");
+  }
+  delay(250);
+ 
+  //Confirm name change
+  ble.sendCommandCheckOK("AT+GAPDEVNAME");
 
   /* Disable command echo from Bluefruit */
   ble.echo(false);
@@ -134,61 +156,58 @@ void loop(void)
 
   // Buttons
   if (packetbuffer[1] == 'B') {
-    uint8_t buttnum = packetbuffer[2] - '0';
+    uint8_t num = packetbuffer[2] - '0';
     boolean pressed = packetbuffer[3] - '0';
-    Serial.print ("Button "); Serial.print(buttnum);
-    if (buttnum == 1 & pressed) {
-      Serial.println(" pressed");
-      myservo.write(80);
-      delay(100);
-      myservo.write(90);
-    }
-    if (buttnum == 2 & pressed) {
-      Serial.println(" pressed");
-      myservo.write(100);
-      delay(100);
-      myservo.write(90);
-    }
-    if (buttnum == 3 & pressed) {
-      Serial.println(" pressed");
-      //send IR command
-      digitalWrite(A0, HIGH);
-      delay(500);
-    }
-    if (buttnum == 4 & pressed) {
-      Serial.println(" pressed");
-      int irRead = digitalRead(A1);
-      if (irRead == 1){
-        //log the record
-      }
+    Serial.print ("Button "); Serial.print(num);
       
+    if (num == 1 & pressed) {
+      Serial.println(" pressed");
+      digitalWrite(A0, HIGH);
+      delay(100);
+      digitalWrite(A0, LOW);
+    } 
+    if (num == 2 & pressed) {
+      Serial.println(" pressed");
+      //read signals
+    } 
+    if (num == 3 & pressed) {
+      Serial.println(" pressed");
+      myServo.write(80);
+      delay(100);
+      myServo.write(90);
     }
-    if (buttnum == 5 & pressed) {
+    if (num == 4 & pressed) {
+      Serial.println("pressed");
+      myServo.write(100);
+      delay(100);
+      myServo.write(90);
+    }
+    if (num == 5 & pressed) {
       Serial.println(" pressed");
-      move(1, 255, 1);
-      move(2, 255, 1);
-      delay(200);
+      move(1, 200, 0);
+      move(2, 200, 0);
+      delay(400);
       stop();
     } 
-    if (buttnum == 6 & pressed) {
+    if (num == 6 & pressed) {
       Serial.println(" pressed");
-      move(1, 255, 0);
-      move(2, 255, 0);
-      delay(200);
+      move(1, 200, 1);
+      move(2, 200, 1);
+      delay(400);
       stop();
     } 
-    if (buttnum == 7 & pressed) {
+    if (num == 7 & pressed) {
       Serial.println(" pressed");
-      move(1, 127, 0);
-      move(2, 127, 1);
-      delay(200);
+      move(1, 200, 0);
+      move(2, 200, 1);
+      delay(270);
       stop();
     } 
-    if (buttnum == 8 & pressed) {
+    if (num == 8 & pressed) {
       Serial.println(" pressed");
-      move(1, 127, 1);
-      move(2, 127, 0);
-      delay(200);
+      move(1, 200, 1);
+      move(2, 200, 0);
+      delay(270);
       stop();
     } else {
       Serial.println(" released");
@@ -200,10 +219,6 @@ void loop(void)
 
 
 void move(int motor, int speed, int direction){
-//Move specific motor at speed and direction
-//motor: 0 for B 1 for A
-//speed: 0 is off, and 255 is full speed
-//direction: 0 clockwise, 1 counter-clockwise
 
 //  digitalWrite(STBY, HIGH); //disable standby
 
@@ -214,7 +229,6 @@ void move(int motor, int speed, int direction){
     inPin1 = HIGH;
     inPin2 = LOW;
   }
-
   if(motor == 1){
     digitalWrite(AIN1, inPin1);
     digitalWrite(AIN2, inPin2);
@@ -232,3 +246,4 @@ void stop(){
 analogWrite(PWMA, 0);
 analogWrite(PWMB, 0);
 }
+
