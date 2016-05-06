@@ -21,3 +21,6 @@ Andriod: https://play.google.com/store/apps/details?id=com.adafruit.bluefruit.le
 
 laptop: https://github.com/adafruit/adafruit-bluefruit-le-desktop/releases
 
+Information on the commands for the Control Pad are found here: https://learn.adafruit.com/bluefruit-le-connect-for-ios/controller
+Do keep buttons 5, 6, 7, & 8 reserved for motion...
+
