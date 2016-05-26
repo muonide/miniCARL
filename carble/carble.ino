@@ -155,46 +155,44 @@ void loop(void)
   // printHex(packetbuffer, len);
 
   //Commands recieved from bluetooth buttons
-  if(packetbuffer[1] == 'B'){
+  if(packetbuffer[1] == 'B'){                   // If button packet recieved
     Serial.print ("Button"); Serial.print(num);
-    boolean pressed = packetbuffer[3] - '0';
-    uint8_t button = packetbuffer[2] - '0';
-    if(pressed){
+    boolean pressed = packetbuffer[3] - '0';    // Convert "pressed or released" char byte to bool
+    uint8_t button = packetbuffer[2] - '0';     // Convert "button number" char byte to int
+    if(pressed){                                // On button press
       Serial.println(" pressed");
-      if(button == 1){
+      if(button == 1){                          // Button 1 pressed
         // Button 1 stuff
-      }else if(button == 2){
+      }else if(button == 2){                    // Button 2 pressed
         // Button 2 stuff
-      }else if(button == 3){
+      }else if(button == 3){                    // Button 3 pressed
         // Button 3 stuff
-      }else if(button == 4){
+      }else if(button == 4){                    // Button 4 pressed
         // Button 4 stuff
-      }else if(button == 5){      // Move forward?
+      }else if(button == 5){                    // Move forward?
         move(1, 200, 0);
         move(2, 200, 0);
-      }else if(button == 6){      // Move backward?
+      }else if(button == 6){                    // Move backward?
         move(1, 200, 1);
         move(2, 200, 1);
-      }else if(button == 7){      // Turn right?
+      }else if(button == 7){                    // Turn right?
         move(1, 200, 0);
         move(2, 200, 1);
-      }else if(button == 8){      // Turn left?
+      }else if(button == 8){                    // Turn left?
         move(1, 200, 1);
         move(2, 200, 0);
       }
     }
-    if(!pressed){
+    if(!pressed){                               // On button release
       Serial.println(" released");
-      if(button >= 5){            // if one of the arrow keys
+      if(button >= 5){                          // if one of the arrow keys
         stop();
-      } else {                    // if 1-4
-
+      } else {                                  // if 1-4
+        // numbered button stuff
       }
-
     }
   }
 }
-
 
 void move(int motor, int speed, int direction){
 
