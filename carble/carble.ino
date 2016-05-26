@@ -156,9 +156,10 @@ void loop(void)
 
   //Commands recieved from bluetooth buttons
   if(packetbuffer[1] == 'B'){                   // If button packet recieved
-    Serial.print ("Button"); Serial.print(num);
     boolean pressed = packetbuffer[3] - '0';    // Convert "pressed or released" char byte to bool
     uint8_t button = packetbuffer[2] - '0';     // Convert "button number" char byte to int
+    Serial.print ("Button "); 
+    Serial.print(button);
     if(pressed){                                // On button press
       Serial.println(" pressed");
       if(button == 1){                          // Button 1 pressed
