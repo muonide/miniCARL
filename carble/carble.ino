@@ -33,12 +33,12 @@ String BROADCAST_CMD = String("AT+GAPDEVNAME=" + BROADCAST_NAME);
 Servo myServo;
 
 //Motor A
-int PWMA = 5; //Speed control
+int PWMA = 10; //Speed control
 int AIN1 = 9; //Direction
 int AIN2 = 6; //Direction
 
 //Motor B
-int PWMB = 10; //Speed control
+int PWMB = 5; //Speed control
 int BIN1 = 11; //Direction
 int BIN2 = 12; //Direction
 
