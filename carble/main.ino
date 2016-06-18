@@ -28,7 +28,7 @@
 
 // MiniCARL Libraries
 #include "miniCARL.h"
-#include "PinConfig.h"
+#include "Config.h"
 #include "BluefruitConfig.h"
 
 // Enter the bots name
@@ -40,6 +40,9 @@ Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_
 // Function prototypes
 uint8_t readPacket(Adafruit_BLE *ble, uint16_t timeout);
 float parsefloat(uint8_t *buffer);
+void initializeBluetooth(void);
+bool getButton(bool& pressed, int& button);
+bool getAccelerometer(float& direction, float& turn);
 
 // Define buffers
 extern uint8_t packetbuffer[];
@@ -55,13 +58,16 @@ void setup(void)
   pinMode(BIN1, OUTPUT);
   pinMode(BIN2, OUTPUT);
 
-  initializeBoard();                            // Setup bluetooth and wait for connection
+  initializeBluetooth();                        // Setup bluetooth and wait for connection
 }
 
 void loop(void)
 {
+  // Control variables
   bool pressed;
   int button;
+  float speed;                                  // Negitive values for forward movement
+  float turn;                                   // Negitive values for left
 
   if(getButton(pressed, button)){
     Serial.print ("Button ");
@@ -98,6 +104,36 @@ void loop(void)
         // numbered button stuff
       }
     }
+  }else if(getAccelerometer(speed, turn)){
+    // Determine Direction
+    bool direction = true;                      // Forward direction is true
+    if(speed < 0){
+      direction = false;
+    }
+
+    // Map accelerometer speed and turn for move()
+    speed = map(direction, DIR_LOW_i, DIR_HIGH_i, DIR_LOW_f, DIR_HIGH_f);
+    turn = map(turn, TURN_LOW_i, TURN_HIGH_i, TURN_LOW_f, TURN_HIGH_f);
+
+    if(direction){
+      if(turn >= 0){                              // Turn right or straight
+        move(1, speed, direction);
+        move(2, speed - turn, direction);
+      }else{                                      // Turn left
+        move(1, speed - turn, direction);
+        move(2, speed, direction);
+      }
+    }else{
+      if(turn >= 0){                              // Turn left or straight
+        move(1, speed - turn, direction);
+        move(2, speed, direction);
+      }else{                                      // Turn right
+        move(1, speed, direction);
+        move(2, speed - turn, direction);
+      }
+    }
+
+
   }
 }
 
@@ -106,7 +142,7 @@ void loop(void)
  *
  * @returns Void
  */
-void initializeBoard(void){
+void initializeBluetooth(void){
   Serial.begin(9600);
 
   if ( !ble.begin(VERBOSE_MODE) )
@@ -173,7 +209,7 @@ void initializeBoard(void){
 }
 
 /*
- * Recieves packet from Bluefruit controller and returns information by
+ * Recieves a button packet from Bluefruit controller and returns information by
  * reference.
  *
  * @returns Bool to determine if a packet was recieved.
@@ -189,6 +225,33 @@ bool getButton(bool& pressed, int& button){
     if(packetbuffer[1] == 'B'){           // If button packet recieved
       pressed = packetbuffer[3] - '0';    // Convert "pressed or released" char byte to bool
       button = packetbuffer[2] - '0';     // Convert "button number" char byte to int
+
+    }
+  }else{
+      packetReceived = false;
+  }
+
+  return packetReceived;
+}
+
+/*
+ * Recieves an accelerometer packet from Bluefruit controller and returns speed
+ * and turn by reference.
+ *
+ * @returns Bool to determine if a packet was recieved.
+ */
+bool getAccelerometer(float& speed, float& turn){
+  bool packetReceived = true;
+
+  /* Wait for new data to arrive */
+  uint8_t len = readPacket(&ble, BLE_READPACKET_TIMEOUT);
+  parsefloat(packetbuffer);
+
+  //Commands recieved from bluetooth accelerometer
+  if(len != 0){
+    if(packetbuffer[1] == 'A'){                     // If accelerometer packet recieved
+      turn = packetbuffer[3];                       // accelerometer Y direction describes forward and backward movement
+      speed = packetbuffer[4];                      // accelerometer Z direction describes right and left movement
 
     }
   }else{
