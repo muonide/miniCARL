@@ -1,29 +1,22 @@
-#ifndef MOVEMENT_H
-#define MOVEMENT_H
+#ifndef MINICARL_H
+#define MINICARL_H
 
-#include "PinMap.h"
+// MiniCARL Libraries
+#include "PinConfig.h"
 
+// Adafruit Libraries
 #include "Adafruit_BLE.h"
 #include "Adafruit_BluefruitLE_SPI.h"
 #include "Adafruit_BluefruitLE_UART.h"
 
-// Function Prototypes
-void move(int motor, int speed, int direction);
-void stop();
-
-// function prototypes over in packetparser.cpp
-uint8_t readPacket(Adafruit_BLE *ble, uint16_t timeout);
-float parsefloat(uint8_t *buffer);
-
-// the packet buffer
-extern uint8_t packetbuffer[];
-
 // Function Definitions
 
+/*
+ * Motor control function move a motor given the speed and direction.
+ *
+ * @returns Void
+ */
 void move(int motor, int speed, int direction){
-
-//  digitalWrite(STBY, HIGH); //disable standby
-
   boolean inPin1 = LOW;
   boolean inPin2 = HIGH;
 
@@ -40,15 +33,30 @@ void move(int motor, int speed, int direction){
     digitalWrite(BIN2, inPin2);
     analogWrite(PWMB, speed);
   }
+
+  return;
 }
 
+/*
+ * Stops both motors
+ *
+ * @returns Void
+ */
 void stop(){
-//enable standby
-//  digitalWrite(STBY, LOW);
-analogWrite(PWMA, 0);
-analogWrite(PWMB, 0);
+  analogWrite(PWMA, 0);
+  analogWrite(PWMB, 0);
+
+  return;
 }
 
-
+/*
+ * An error handler for strings in flash memory.
+ *
+ * @returns Void
+ */
+void error(const __FlashStringHelper*err) {
+  Serial.println(err);
+  while (1);
+}
 
 #endif

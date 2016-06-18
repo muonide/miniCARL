@@ -1,17 +1,19 @@
-/*********************************************************************
- This is an example for our nRF51822 based Bluefruit LE modules
+/*
+ * MiniCARL Basic Platform
+ *
+ * @version 0.1.0
+ *
+ * This program provides the basic structuring for a miniCARL bot. This file
+ * contains the scaffolding for the bot's movemement and controls. The robot's
+ * hardware is detailed in the included files. MiniCARL bots have been
+ * designed to be operated via bluetooth using Adafruit's Bluefruit controller
+ * app. This file was adapted from Adafruit's Feather bluetooth example:
+ *                              {{ URL HERE }}
+ *
+ * {{ LICENSE information }}
+ */
 
- Pick one up today in the adafruit shop!
-
- Adafruit invests time and resources providing this open source code,
- please support Adafruit and open-source hardware by purchasing
- products from Adafruit!
-
- MIT license, check LICENSE for more information
- All text above, and the splash screen below must be included in
- any redistribution
-*********************************************************************/
-
+// Arduino Libraries
 #include <Arduino.h>
 #include <string.h>
 #include <SPI.h>
@@ -19,41 +21,33 @@
   #include <SoftwareSerial.h>
 #endif
 
+// Adafruit Libraries
 #include "Adafruit_BLE.h"
 #include "Adafruit_BluefruitLE_SPI.h"
 #include "Adafruit_BluefruitLE_UART.h"
 
-#include "Movement.h"
-#include "PinMap.h"
+// MiniCARL Libraries
+#include "miniCARL.h"
+#include "PinConfig.h"
 #include "BluefruitConfig.h"
 
-String BROADCAST_NAME = "Flexo";
+// Enter the bots name
+String BOT_NAME = "InsertBotName";
 
-String BROADCAST_CMD = String("AT+GAPDEVNAME=" + BROADCAST_NAME);
-
-//Servo myServo;
-
+// Initialize Bluefruit SPI
 Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_RST);
 
-
-// A small helper
-void error(const __FlashStringHelper*err) {
-  Serial.println(err);
-  while (1);
-}
-
-// function prototypes over in packetparser.cpp
+// Function prototypes
 uint8_t readPacket(Adafruit_BLE *ble, uint16_t timeout);
 float parsefloat(uint8_t *buffer);
 
-// the packet buffer
+// Define buffers
 extern uint8_t packetbuffer[];
-
 char buf[60];
 
 void setup(void)
 {
-  /* Declare PinModes */
+  /* Declare motor controller pin modes */
   pinMode(PWMA, OUTPUT);
   pinMode(AIN1, OUTPUT);
   pinMode(AIN2, OUTPUT);
@@ -61,17 +55,16 @@ void setup(void)
   pinMode(BIN1, OUTPUT);
   pinMode(BIN2, OUTPUT);
 
-  initializeBoard();
-
+  initializeBoard();                            // Setup bluetooth and wait for connection
 }
 
 void loop(void)
 {
   bool pressed;
   int button;
-  
+
   if(getButton(pressed, button)){
-    Serial.print ("Button "); 
+    Serial.print ("Button ");
     Serial.print(button);
     if(pressed){                                // On button press
       Serial.println(" pressed");
@@ -83,16 +76,16 @@ void loop(void)
         // Button 3 stuff
       }else if(button == 4){                    // Button 4 pressed
         // Button 4 stuff
-      }else if(button == 5){                    // Move forward?
+      }else if(button == 5){                    // Move forward
         move(1, 200, 0);
         move(2, 200, 0);
-      }else if(button == 6){                    // Move backward?
+      }else if(button == 6){                    // Move backward
         move(1, 200, 1);
         move(2, 200, 1);
-      }else if(button == 7){                    // Turn right?
+      }else if(button == 7){                    // Turn right
         move(1, 200, 0);
         move(2, 200, 1);
-      }else if(button == 8){                    // Turn left?
+      }else if(button == 8){                    // Turn left
         move(1, 200, 1);
         move(2, 200, 0);
       }
@@ -108,28 +101,33 @@ void loop(void)
   }
 }
 
-
+/*
+ *  Initializes the Feather's bluetooth and waits for connection.
+ *
+ * @returns Void
+ */
 void initializeBoard(void){
   Serial.begin(9600);
-  Serial.println(F("MiniCARL Init"));
-  Serial.println(F("-----------------------------------------"));
-  
-  /* Initialise the module */
-  Serial.print(F("Initialising the Bluefruit LE module: "));
 
   if ( !ble.begin(VERBOSE_MODE) )
   {
     error(F("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?"));
   }
-  Serial.println( F("OK!") );
 
-  /* Perform a factory reset to make sure everything is in a known state */
+  Serial.println(F("MiniCARL Bluetooth Initialization"));
+  Serial.println(F("-----------------------------------------"));
+
+  // Initialise the module
+  Serial.print(F("Initialising the Bluefruit LE module: "));
+
+  // Perform a factory reset to make sure everything is in a known state
   Serial.println(F("Performing a factory reset: "));
   if (! ble.factoryReset() ){
        error(F("Couldn't factory reset"));
   }
 
-//Convert the name change command to a char array
+  //Convert the name change command to a char array
+  String BROADCAST_CMD = String("AT+GAPDEVNAME=" + BOT_NAME);
   BROADCAST_CMD.toCharArray(buf, 60);
 
   //Change the broadcast device name here!
@@ -147,49 +145,55 @@ void initializeBoard(void){
   //Confirm name change
   ble.sendCommandCheckOK("AT+GAPDEVNAME");
 
-  /* Disable command echo from Bluefruit */
+  // Disable command echo from Bluefruit
   ble.echo(false);
 
   Serial.println("Requesting Bluefruit info:");
-  /* Print Bluefruit information */
+  // Print Bluefruit information
   ble.info();
 
   Serial.println(F("Please use Adafruit Bluefruit LE app to connect in Controller mode"));
   Serial.println();
 
-  ble.verbose(false);  // debug info is a little annoying after this point!
+  // Disable debug mode
+  ble.verbose(false);
 
-  /* Wait for connection */
+  // Wait for connection
   while (! ble.isConnected()) {
       delay(500);
   }
 
-  Serial.println(F("*****************"));
-
   // Set Bluefruit to DATA mode
+  Serial.println(F("*****************"));
   Serial.println( F("Switching to DATA mode!") );
+  Serial.println(F("*****************"));
   ble.setMode(BLUEFRUIT_MODE_DATA);
 
-  Serial.println(F("*****************"));
+  return;
 }
 
+/*
+ * Recieves packet from Bluefruit controller and returns information by
+ * reference.
+ *
+ * @returns Bool to determine if a packet was recieved.
+ */
 bool getButton(bool& pressed, int& button){
   bool packetReceived = true;
-  
+
   /* Wait for new data to arrive */
   uint8_t len = readPacket(&ble, BLE_READPACKET_TIMEOUT);
 
   //Commands recieved from bluetooth buttons
   if(len != 0){
-    if(packetbuffer[1] == 'B'){                   // If button packet recieved
+    if(packetbuffer[1] == 'B'){           // If button packet recieved
       pressed = packetbuffer[3] - '0';    // Convert "pressed or released" char byte to bool
       button = packetbuffer[2] - '0';     // Convert "button number" char byte to int
-      
+
     }
   }else{
       packetReceived = false;
   }
-  
+
   return packetReceived;
 }
-
