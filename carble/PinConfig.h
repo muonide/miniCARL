@@ -1,5 +1,6 @@
 /*
  * MiniCARL Pin Configuration File
+ * Default pin configuration is set per the most current Eagle board layout
  */
 
 #ifndef PINCONFIG_H
@@ -11,8 +12,8 @@ int AIN1 = 9; //Direction
 int AIN2 = 6; //Direction
 
 //Motor B pins
-int PWMB = 12; //Speed control
-int BIN1 = 10; //Direction
-int BIN2 = 11; //Direction
+int PWMB = 10; //Speed control
+int BIN1 = 11; //Direction
+int BIN2 = 12; //Direction
 
 #endif
