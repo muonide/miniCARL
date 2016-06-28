@@ -16,12 +16,13 @@
 #define BIN2          11 //Direction
 
 // Accelerometer maping constants
-#define DIR_LOW_i     -9.9
-#define DIR_HIGH_i    9.9
-#define DIR_LOW_f     0
-#define DIR_HIGH_f    200
-#define TURN_LOW_i    -9.9
-#define TURN_HIGH_i   9.9
+#define VEL_LOW_i     -1
+#define VEL_HIGH_i    1
+#define VEL_LOW_f     0
+#define VEL_HIGH_f    200
+
+#define TURN_LOW_i    -1
+#define TURN_HIGH_i   1
 #define TURN_LOW_f    0
 #define TURN_HIGH_f   200
 

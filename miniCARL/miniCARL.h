@@ -2,7 +2,7 @@
 #define MINICARL_H
 
 // MiniCARL Libraries
-#include "PinConfig.h"
+#include "Config.h"
 
 // Adafruit Libraries
 #include "Adafruit_BLE.h"
