@@ -258,19 +258,28 @@ bool getButton(bool& pressed, int& button){
  */
 bool getAccelerometer(float& velocity, float& turn){
   bool packetReceived = true;
-
-  /* Wait for new data to arrive */
-  uint8_t len = readPacket(&ble, BLE_READPACKET_TIMEOUT);
-
-  //Commands recieved from bluetooth accelerometer
-  if(len != 0){
-    if(packetbuffer[1] == 'A'){                     // If accelerometer packet recieved
-      turn = parsefloat(packetbuffer+6);                       // accelerometer Y bearing describes forward and backward movement
-      velocity = parsefloat(packetbuffer+10);                      // accelerometer Z bearing describes right and left movement
+  int samples = 2;
+  int interval = 25;
+  
+  for(int i = 0; i < samples; i++) {
+    /* Wait for new data to arrive */
+    uint8_t len = readPacket(&ble, BLE_READPACKET_TIMEOUT);
+  
+    //Commands recieved from bluetooth accelerometer
+    if(len != 0){
+      if(packetbuffer[1] == 'A'){                // If accelerometer packet recieved
+        turn += parsefloat(packetbuffer+6);      // accelerometer Y bearing describes forward and backward movement
+        velocity += parsefloat(packetbuffer+10); // accelerometer Z bearing describes right and left movement
+      }
     }
-  }else{
-      packetReceived = false;
+    else{
+        packetReceived = false;
+    }
+    // wait until reading the next packet
+    delay(interval);
   }
+  turn /= samples+1;
+  velocity /= samples+1;
   
   return packetReceived;
 }
