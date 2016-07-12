@@ -260,6 +260,7 @@ bool getAccelerometer(float& velocity, float& turn){
   bool packetReceived = true;
   int samples = 2;
   int interval = 25;
+  float v_cutoff = 0.5; // accelerometer data are reported in m/s^2 on Android; probably also on iOS
   
   for(int i = 0; i < samples; i++) {
     /* Wait for new data to arrive */
@@ -280,6 +281,11 @@ bool getAccelerometer(float& velocity, float& turn){
   }
   turn /= samples+1;
   velocity /= samples+1;
+  
+  // If the velocity is below the cutoff velocity, make it zero.
+  if (velocity < v_cutoff) {
+    velocity = 0;
+  }
   
   return packetReceived;
 }
