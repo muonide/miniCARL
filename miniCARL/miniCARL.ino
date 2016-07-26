@@ -31,18 +31,33 @@
 #include "Config.h"
 #include "BluefruitConfig.h"
 
+//other libraries
+#include <math.h>
+
 // Enter the bots name
 String BOT_NAME = "InsertBotName";
+
+// acceleration vector object
+struct acceleration_vector {
+  double x;
+  double y;
+  double z;
+  double length(void) {
+    return sqrt(pow(x,2)+pow(y,2)+pow(z,2));
+  }
+  
+};
 
 // Initialize Bluefruit SPI
 Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_RST);
 
 // Function prototypes
-uint8_t readPacket(Adafruit_BLE *ble, uint16_t timeout);
-float parsefloat(uint8_t *buffer);
+uint8_t readPacket(Adafruit_BLE*, uint16_t);
+float parsefloat(uint8_t*);
 void initializeBluetooth(void);
-bool getButton(bool& pressed, int& button);
-bool getAccelerometer(float& bearing, float& turn);
+bool getButton(bool&, int&);
+bool getAccelerometer(acceleration_vector&);
+double operator*(const acceleration_vector&, const acceleration_vector&); // vector dot product
 
 // Define buffers
 extern uint8_t packetbuffer[];
@@ -104,36 +119,36 @@ void loop(void)
         // numbered button stuff
       }
     }
-  }else if(getAccelerometer(velocity, turn)){
-    // Determine bearing
-    bool bearing;                      // Forward bearing is true
-    if(velocity < 0){
-      bearing = true;
-      velocity = -velocity;
-    }else{
-      bearing = false;
-    }
+  }
+  else {
+    // acceleration vector
+    static acceleration_vector avel{0,0,0};
+    getAccelerometer(avel);
+    // unit vectors
+    acceleration_vector unit_x{1,0,0};
+    acceleration_vector unit_y{0,1,0};
+    acceleration_vector unit_z{0,0,1};
+    // lower cutoff velocity
+    double v_cutoff = 0.5; //m/s^2
 
-    if(turn < 0){
-      turn = -turn;
-    }
-    // Map accelerometer velocity and turn for move()
-    //velocity = map(velocity, DIR_LOW_i, DIR_HIGH_i, DIR_LOW_f, DIR_HIGH_f);
-    //turn = map(turn, TURN_LOW_i, TURN_HIGH_i, TURN_LOW_f, TURN_HIGH_f);
+    // z direction controls the velocity
+    int velocity = map(avel*unit_z, v_cutoff, avel.length(), 0, VEL_HIGH_f);
+    int turn = map(avel*unit_y, 0, avel.length(), 0, TURN_HIGH_f);
+    int bearing = (avel*unit_y > 0 ? 0 : 1);
 
-    velocity = VEL_HIGH_f * velocity;
-    turn = TURN_HIGH_f * turn;
-
+    /**** deprecated ****
     if(velocity > VEL_HIGH_f){
       velocity = VEL_HIGH_f;
     }
     if(turn > TURN_HIGH_f){
       turn = TURN_HIGH_f;
     }
+    */
   
     Serial.print("Bearing: " + String(bearing));
     Serial.print(" Velocity: " + String(velocity));
     Serial.println("  Turn: " + String(turn));
+    
     
     if(bearing){
       if(turn >= 0){                              // Turn right or straight
@@ -250,27 +265,88 @@ bool getButton(bool& pressed, int& button){
   return packetReceived;
 }
 
-/*
+/************* DEPRECATED --- new getAccelerometer function below *********
  * Recieves an accelerometer packet from Bluefruit controller and returns velocity
  * and turn by reference.
  *
  * @returns Bool to determine if a packet was recieved.
- */
+ *
 bool getAccelerometer(float& velocity, float& turn){
   bool packetReceived = true;
-
-  /* Wait for new data to arrive */
-  uint8_t len = readPacket(&ble, BLE_READPACKET_TIMEOUT);
-
-  //Commands recieved from bluetooth accelerometer
-  if(len != 0){
-    if(packetbuffer[1] == 'A'){                     // If accelerometer packet recieved
-      turn = parsefloat(packetbuffer+6);                       // accelerometer Y bearing describes forward and backward movement
-      velocity = parsefloat(packetbuffer+10);                      // accelerometer Z bearing describes right and left movement
+  int samples = 2;
+  int interval = 25;
+  float v_cutoff = 0.5; // accelerometer data are reported in m/s^2 on Android; probably also on iOS
+  
+  for(int i = 0; i < samples; i++) {
+    // Wait for new data to arrive
+    uint8_t len = readPacket(&ble, BLE_READPACKET_TIMEOUT);
+  
+    //Commands recieved from bluetooth accelerometer
+    if(len != 0){
+      if(packetbuffer[1] == 'A'){                // If accelerometer packet recieved
+        turn += parsefloat(packetbuffer+6);      // accelerometer Y bearing describes forward and backward movement
+        velocity += parsefloat(packetbuffer+10); // accelerometer Z bearing describes right and left movement
+      }
     }
-  }else{
-      packetReceived = false;
+    else{
+        packetReceived = false;
+    }
+    // wait until reading the next packet
+    delay(interval);
+  }
+  turn /= samples+1;
+  velocity /= samples+1;
+  
+  // If the velocity is below the cutoff velocity, make it zero.
+  if (velocity < v_cutoff) {
+    velocity = 0;
   }
   
   return packetReceived;
+}
+*/
+
+/*
+ * Recieves an accelerometer packet from Bluefruit controller and returns the
+ * acceleration vector by reference
+ *
+ * @returns Bool to determine if a packet was recieved.
+ */
+bool getAccelerometer(acceleration_vector& avect) {
+  // NOTE: avect needs to be static
+  bool packetReceived = true;
+  int samples = 2; // number of loops
+  int interval = 30; // delay between loops
+  int wt = 3; // weighting factor
+  
+  for(int i = 0; i < samples; i++) {
+    // Wait for new data to arrive
+    uint8_t len = readPacket(&ble, BLE_READPACKET_TIMEOUT);
+  
+    //Commands recieved from bluetooth accelerometer
+    if(len != 0){
+      // If accelerometer packet recieved
+      if(packetbuffer[1] == 'A'){
+        avect.x += wt*parsefloat(packetbuffer+2);
+        avect.y += wt*parsefloat(packetbuffer+6);
+        avect.z += wt*parsefloat(packetbuffer+10);
+      }
+    }
+    else{
+        packetReceived = false;
+    }
+    // wait until reading the next packet
+    delay(interval);
+  }
+  
+  // complete the averaging calculation
+  avect.x /= wt*samples+1;
+  avect.y /= wt*samples+1;
+  avect.z /= wt*samples+1;
+  
+  return packetReceived;
+}
+
+double operator*(const acceleration_vector& a, const acceleration_vector& b) {
+  return (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
 }
