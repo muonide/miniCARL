@@ -132,6 +132,11 @@ void stop(void);
 // control functions
 bool getAccelerometer(cart_vector&);
 bool getButton(bool&, uint8_t&);
+
+/////////////////////
+///// templates /////
+/////////////////////
+
 // template for C++ stream-like Serial output
 template <class Console, typename T>
 Console& operator<<(Console& port, const T& data) {

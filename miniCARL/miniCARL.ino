@@ -125,7 +125,10 @@ void loop(void) {
   // otherwise, if the accelerometer is active . . .
   else if(getAccelerometer(vector)) {
     // serial debugging
-    Serial << F("accelerometer reading: ") << vector << ("\n");
+    Serial << F("accelerometer reading: ") << vector << F("\n");
     move(vector);
+  }
+  else {
+    Serial << F("No action taken\n");
   }
 }

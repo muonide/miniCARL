@@ -20,10 +20,12 @@ void move(const cyl_vector& cyl) {
   Serial << F("void move(const cyl_vector&) called!\n");
   double min_frac = 0.1; // fraction of vector length which maps to zero
   
-  // The speed depends on the magnitude of the z component as compared to the vector length, converted to a uint8_t
+  // The speed depends on the magnitude of the z component as compared to the vector length,
+  // converted to a uint8_t (implicitly)
   uint8_t speed = (abs(cyl.z) >= min_frac * cyl.length() ? (abs(cyl.z) / cyl.length() * 255) : 0);
   
-  // the differential is the multipier that makes the wheels spin at different speeds at different input angles
+  // The differential is the multipier that makes the wheels spin at different speeds at
+  // different input angles.
   // 1 if theta <= 0, else --> 0 as theta --> +pi/2, and 0 for theta >= +pi/2
   double A_diff = (cyl.theta <= 0 ? 1 : (cyl.theta >= pi/2 ? 0 : (pi - cyl.theta) / pi));
   // 1 if theta >= 0, else --> 0 as theta --> -pi/2, and 0 for theta <= -pi/2
@@ -64,9 +66,9 @@ void stop(void) {
 bool getAccelerometer(cart_vector& cart) {
   Serial << F("bool getAccelerometer(cart_vector&) called!\n");
   bool packetReceived = true;
-  const uint8_t samples = 3; // the number of times to loop
-  const uint8_t interval = 10; // sample delay interval
-  const uint8_t weight = 3; // weighting of new samples
+  const uint8_t samples = 2; // the number of times to loop
+  const uint8_t interval = 30; // sample delay interval
+  const uint8_t weight = 5; // weighting of new samples
 
   for (int i = 0; i < samples && packetReceived; i++) {
     // Wait for new data to arrive
@@ -111,13 +113,17 @@ bool getButton(bool& pressed, uint8_t& button) {
 
   // Wait for new data to arrive
   uint8_t len = readPacket(&ble, BLE_READPACKET_TIMEOUT);
-  Serial << F("len = ") << len << "\n";
+  Serial << F("len = ") << len << F("\n");
 
   //Commands recieved from bluetooth buttons
   if(len != 0) {
-    if(packetbuffer[1] == 'B') { // If button packet recieved
-      pressed = static_cast<bool>(packetbuffer[3] - '0'); // Convert "pressed or released" char byte to bool
-      button = static_cast<uint8_t>(packetbuffer[2] - '0'); // Convert "button number" char byte to int
+    // If button packet recieved
+    if(packetbuffer[1] == 'B') {
+      // Convert "pressed or released" char byte to bool
+      pressed = static_cast<bool>(packetbuffer[3] - '0');
+      // Convert "button number" char byte to int
+      button = static_cast<uint8_t>(packetbuffer[2] - '0');
+      // confirm receipt of packet
       packetReceived = true;
     }
   }
@@ -147,24 +153,24 @@ void initializeBluetooth(String name) {
 
   // Perform a factory reset to make sure everything is in a known state
   Serial.println(F("Performing a factory reset: "));
-  if (! ble.factoryReset() ){
+  if (!ble.factoryReset()){
        error(F("Couldn't factory reset"));
   }
 
   //Convert the name change command to a char array
   String BROADCAST_CMD = String("AT+GAPDEVNAME=" + name);
-  char buf[BROADCAST_CMD.length()+1];  // used to contain the broadcast name command
-  BROADCAST_CMD.toCharArray(buf, BROADCAST_CMD.length()+1);
+  char buf[BROADCAST_CMD.length() + 1];  // used to contain the broadcast name command
+  BROADCAST_CMD.toCharArray(buf, BROADCAST_CMD.length() + 1);
 
   //Change the broadcast device name here!
   if(ble.sendCommandCheckOK(buf)) {
-    Serial.println("name changed");
+    Serial.println(F("name changed"));
   }
   delay(250);
 
   //reset to take effect
   if(ble.sendCommandCheckOK("ATZ")){
-    Serial.println("resetting");
+    Serial.println(F("resetting"));
   }
   delay(250);
 
@@ -174,7 +180,7 @@ void initializeBluetooth(String name) {
   // Disable command echo from Bluefruit
   ble.echo(false);
 
-  Serial.println("Requesting Bluefruit info:");
+  Serial.println(F("Requesting Bluefruit info:"));
   // Print Bluefruit information
   ble.info();
 
@@ -184,14 +190,14 @@ void initializeBluetooth(String name) {
   ble.verbose(false);
 
   // Wait for connection
-  while (! ble.isConnected()) {
-      delay(100);
+  while (!ble.isConnected()) {
+    delay(100);
   }
 
   // Set Bluefruit to DATA mode
-  Serial.println(F("*****************"));
-  Serial.println(F("Switching to DATA mode!"));
-  Serial.println(F("*****************"));
+  Serial << F("*****************\n")
+         << F("Switching to DATA mode!\n")
+         << F("*****************");
   ble.setMode(BLUEFRUIT_MODE_DATA);
   
   // close the serial port
@@ -218,7 +224,8 @@ void error(const __FlashStringHelper* err) {
  * @return            the data at that address expressed as a double
  */
 double parsefloat(uint8_t* buffer) {
-  return *reinterpret_cast<double*>(buffer); // makes a double* from a uint8_t*, then dereferenes it
+  // makes a double* from a uint8_t*, then dereferenes it
+  return *reinterpret_cast<double*>(buffer);
 }
 
 /*
