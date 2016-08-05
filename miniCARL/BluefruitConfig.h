@@ -2,9 +2,9 @@
 // ----------------------------------------------------------------------------------------------
 // These settings are used in both SW UART, HW UART and SPI mode
 // ----------------------------------------------------------------------------------------------
-#define BUFSIZE                        128   // Size of the read buffer for incoming data
-#define VERBOSE_MODE                   true  // If set to 'true' enables debug output
-#define BLE_READPACKET_TIMEOUT         500   // Timeout in ms waiting to read a response
+const uint8_t BUFSIZE = 128; // size of the read buffer for incoming data
+const bool VERBOSE_MODE = true; // enables debug output if set to true
+const int BLE_READPACKET_TIMEOUT = 500; // timeout in ms waiting to read a response
 
 
 // HARDWARE UART SETTINGS
@@ -12,16 +12,17 @@
 // The following macros declare the HW serial port you are using. Uncomment
 // this line if you are connecting the BLE to Leonardo/Micro or Flora
 // ----------------------------------------------------------------------------------------------
-#ifdef Serial1    // this makes it not complain on compilation if there's no Serial1
-  #define BLUEFRUIT_HWSERIAL_NAME      Serial1
+#ifdef Serial1 // This makes it not complain on compilation if there's no Serial1.
+  #define BLUEFRUIT_HWSERIAL_NAME Serial1
 #endif
 
 
 // SHARED UART SETTINGS
 // ----------------------------------------------------------------------------------------------
-// The following sets the optional Mode pin, its recommended but not required
+// The following sets the optional Mode pin. It's recommended, but not required.
 // ----------------------------------------------------------------------------------------------
-#define BLUEFRUIT_UART_MODE_PIN        -1    // Set to -1 if unused
+const uint8_t BLUEFRUIT_UART_MODE_PIN = -1; // optional; -1 if unused
+const uint8_t BLUEFRUIT_UART_RTS_PIN = -1; // optional; -1 if unused
 
 
 // SHARED SPI SETTINGS
@@ -31,7 +32,6 @@
 // using HW SPI.  This should be used with nRF51822 based Bluefruit LE modules
 // that use SPI (Bluefruit LE SPI Friend).
 // ----------------------------------------------------------------------------------------------
-#define BLUEFRUIT_SPI_CS               8
-#define BLUEFRUIT_SPI_IRQ              7
-#define BLUEFRUIT_SPI_RST              4    // Optional but recommended, set to -1 if unused
-
+const uint8_t BLUEFRUIT_SPI_CS = 8;
+const uint8_t BLUEFRUIT_SPI_IRQ = 7;
+const uint8_t BLUEFRUIT_SPI_RST = 4; // optional but recommended; -1 if unused
