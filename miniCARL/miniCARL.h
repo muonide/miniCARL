@@ -31,9 +31,9 @@ const uint8_t PWMA = 5; //Speed control
 const uint8_t AIN1 = 9; //Direction
 const uint8_t AIN2 = 6; //Direction
 //Motor B pins
-const uint8_t PWMB = 12; //Speed control
-const uint8_t BIN1 = 10; //Direction
-const uint8_t BIN2 = 11; //Direction
+const uint8_t PWMB = 10; //Speed control
+const uint8_t BIN1 = 11; //Direction
+const uint8_t BIN2 = 12; //Direction
 
 // Bluefruit packet and buffer lengths
 const uint8_t PACKET_ACC_LEN = 15; // length of accelerometer packets

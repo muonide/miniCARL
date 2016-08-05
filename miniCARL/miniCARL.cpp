@@ -21,7 +21,7 @@ void move(const cyl_vector& cyl) {
   double min_frac = 0.1; // fraction of vector length which maps to zero
   
   // The speed depends on the magnitude of the z component as compared to the vector length, converted to a uint8_t
-  uint8_t speed = (cyl.z >= min_frac * cyl.length() ? (abs(cyl.z) / cyl.length() * 255) : 0);
+  uint8_t speed = (abs(cyl.z) >= min_frac * cyl.length() ? (abs(cyl.z) / cyl.length() * 255) : 0);
   
   // the differential is the multipier that makes the wheels spin at different speeds at different input angles
   // 1 if theta <= 0, else --> 0 as theta --> +pi/2, and 0 for theta >= +pi/2
@@ -71,6 +71,7 @@ bool getAccelerometer(cart_vector& cart) {
   for (int i = 0; i < samples && packetReceived; i++) {
     // Wait for new data to arrive
     uint8_t len = readPacket(&ble, BLE_READPACKET_TIMEOUT);
+    Serial << F("len = ") << len << "\n";
   
     //Commands recieved from bluetooth accelerometer
     if(len != 0) {
@@ -110,6 +111,7 @@ bool getButton(bool& pressed, uint8_t& button) {
 
   // Wait for new data to arrive
   uint8_t len = readPacket(&ble, BLE_READPACKET_TIMEOUT);
+  Serial << F("len = ") << len << "\n";
 
   //Commands recieved from bluetooth buttons
   if(len != 0) {
@@ -131,7 +133,7 @@ bool getButton(bool& pressed, uint8_t& button) {
  */
 void initializeBluetooth(String name) {
   Serial.begin(9600);
-  while(!Serial);
+  //while(!Serial); // NOTE: Comment this line when disconnected from serial!
 
   if ( !ble.begin(VERBOSE_MODE) ) {
     error(F("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?"));
@@ -178,8 +180,8 @@ void initializeBluetooth(String name) {
 
   Serial.println(F("Please use Adafruit Bluefruit LE app to connect in Controller mode\n\n"));
 
-  // enable debug mode
-  ble.verbose(true);
+  // disable debug mode
+  ble.verbose(false);
 
   // Wait for connection
   while (! ble.isConnected()) {
