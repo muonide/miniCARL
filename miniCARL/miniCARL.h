@@ -1,5 +1,5 @@
 #ifndef MINICARL_H
-  #define MINICARL_H
+    #define MINICARL_H
 
 // Adafruit Libraries
 #include "Adafruit_BLE.h"
@@ -11,7 +11,7 @@
 #include <string.h>
 #include <SPI.h>
 #if not defined (_VARIANT_ARDUINO_DUE_X_) && not defined (_VARIANT_ARDUINO_ZERO_)
-  #include <SoftwareSerial.h>
+    #include <SoftwareSerial.h>
 #endif
 // Adafruit Libraries
 #include <Adafruit_BLE.h>
@@ -35,16 +35,6 @@ const uint8_t PWMB = 10; //Speed control
 const uint8_t BIN1 = 11; //Direction
 const uint8_t BIN2 = 12; //Direction
 
-// Bluefruit packet and buffer lengths
-const uint8_t PACKET_ACC_LEN = 15; // length of accelerometer packets
-const uint8_t PACKET_GYRO_LEN = 15; // length of gyroscope packets
-const uint8_t PACKET_MAG_LEN = 15; // length of magnetometer packets
-const uint8_t PACKET_QUAT_LEN = 19; // length of quaternion packets
-const uint8_t PACKET_BUTTON_LEN = 5; // length of controller button packets
-const uint8_t PACKET_COLOR_LEN = 6; // length of color picker packets
-const uint8_t PACKET_LOCATION_LEN = 15; // length of GPS location packets
-const uint8_t READ_BUFSIZE = 20; // length of the read buffer for incoming packets
-
 //////////////////////////////
 ///// struct definitions /////
 //////////////////////////////
@@ -53,67 +43,130 @@ const uint8_t READ_BUFSIZE = 20; // length of the read buffer for incoming packe
 struct cart_vector;
 struct cyl_vector;
 
-// rectangular/Cartesian vector struct
+/*
+ * general purpose rectangular/Cartesian vector struct
+ */
 struct cart_vector {
-  // allow implicit conversion to a cylindrical vector (defined below)
-  operator cyl_vector(void) const;
-  // mutually orthogonal and linear
-  double x, y, z;
-  // easily acquire the length on demand
-  double length(void) const {
-    // cartesian distance formula
-    return sqrt(this->x * this->x + this->y * this->y + this->z * this->z);
-  }
+    // allow implicit conversion to a cylindrical vector (defined below)
+    operator cyl_vector(void) const;
+    // mutually orthogonal and linear
+    double x, y, z;
+    // easily acquire the length on demand
+    double length(void) const {
+        // cartesian distance formula
+        return sqrt(this->x * this->x + this->y * this->y + this->z * this->z);
+    }
 };
 
-// cylindrical vector struct
+/*
+ * general purpose cylindrical vector struct
+ */
 struct cyl_vector {
-  // allow implicit conversion to a cartesian vector (defined below)
-  operator cart_vector(void) const;
-  // mutually orthogonal, but theta is angular
-  double r, theta, z;
-  // easily acquire the length on demand
-  double length(void) const {
-    // pythagorean theorem
-    return sqrt(this->r * this->r + this->z * this->z);
-  }
+    // allow implicit conversion to a cartesian vector (defined below)
+    operator cart_vector(void) const;
+    // mutually orthogonal, but theta is angular
+    double r, theta, z;
+    // easily acquire the length on demand
+    double length(void) const {
+        // pythagorean theorem
+        return sqrt(this->r * this->r + this->z * this->z);
+    }
 };
 
 // member function that allows implicit conversion of cartesian vectors to cylindrical vectors
 // "inline" keyword avoids compiler complaints about multiple definition
 inline cart_vector::operator cyl_vector(void) const {
-  cyl_vector cyl;
-  // r == sqrt(x^2 + y^2) (distance formula)
-  cyl.r = sqrt(this->x * this->x + this->y * this->y);
-  // theta == arctan(y/x) + pi with (0,0) giving zero
-  cyl.theta = (this->x != 0 && this->y != 0 ? atan2(this->y, this->x) : 0);
-  // z == z (obviously)
-  cyl.z = this->z;
+    cyl_vector cyl;
+    // r == sqrt(x^2 + y^2) (distance formula)
+    cyl.r = sqrt(this->x * this->x + this->y * this->y);
+    // theta == arctan(y/x) + pi with (0,0) giving zero
+    cyl.theta = (this->x != 0 && this->y != 0 ? atan2(this->y, this->x) : 0);
+    // z == z (obviously)
+    cyl.z = this->z;
 
-  return cyl;
+    return cyl;
 }
 
 // member function that allows implicit conversion of cylindrical vectors to cartesian vectors
 // "inline" keyword avoids compiler complaints about multiple definition
 inline cyl_vector::operator cart_vector(void) const {
-  cart_vector cart;
-  // x == r cos(theta)
-  cart.x = this->r * cos(this->theta);
-  // y == r sin(theta)
-  cart.y = this->r * sin(this->theta);
-  // z == z
-  cart.z = this->z;
+    cart_vector cart;
+    // x == r cos(theta)
+    cart.x = this->r * cos(this->theta);
+    // y == r sin(theta)
+    cart.y = this->r * sin(this->theta);
+    // z == z
+    cart.z = this->z;
 
-  return cart;
+    return cart;
 }
+
+/*
+ * a class containing a packet buffer and the length of the packet
+ */
+class BLE_packet {
+    public:
+    // the packet buffer
+    uint8_t buffer[READ_BUFSIZE + 1];
+    // the length of the packet
+    uint8_t length;
+    // determine the packet's type
+    uint8_t type(void) {
+        return this->buffer[1];
+    }
+    // erase the buffer
+    void flush(void) {
+        length = 0;
+        // zero out the buffer
+        memset(this->buffer, 0, READ_BUFSIZE + 1);
+    }
+    // constructor (flushes the buffer before use)
+    BLE_packet(void) {
+        this->flush();
+    }
+    // decay to bool when convenient --- zero-length ==> false (no packet)
+    operator bool(void) const {return (length == 0 ? false : true);}
+};
+
+/*
+ * button class
+ */
+class controller_button {
+    public:
+    // Is a button pressed?
+    bool is_pressed;
+    // which button was pressed (0 if none)
+    uint8_t number;
+    // constructor
+    controller_button(void) {
+        // start as a null button
+        this->is_pressed = false;
+        this->number = 0;
+    }
+    // a function that reads the data from a packet
+    void read_from_packet(const BLE_packet& packet) {
+        if (packet.length != 0 && packet.buffer[1] == 'B') {
+            // convert "button number" char byte to int
+            this->number = static_cast<uint8_t>(packet.buffer[2] - '0');
+            // convert "pressed or released" char byte to bool
+            this->is_pressed = static_cast<bool>(packet.buffer[3] - '0');
+        }
+        else {
+            // If the length is zero or it's not a button packet, default to false and zero.
+            this->is_pressed = false;
+            this->number = 0;
+        }
+    }
+};
 
 /////////////////////////////////
 ///// Function declarations /////
 /////////////////////////////////
 
 // bluefruit functions
-void initializeBluetooth(String);
-uint8_t readPacket(Adafruit_BLE*, uint16_t);
+void initializeBluetooth(Adafruit_BluefruitLE_SPI&, const String);
+//uint8_t readPacket(Adafruit_BLE*, uint16_t);
+BLE_packet readPacket(Adafruit_BLE&, const int);
 double parsefloat(uint8_t*);
 void error(const __FlashStringHelper*);
 void printHex(const uint8_t*, const uint32_t);
@@ -127,11 +180,12 @@ void functionThreeReleased();
 void functionFour(); // button four
 void functionFourReleased();
 // movement functions
+cart_vector vectorFromPacket(BLE_packet&);
 void move(const cyl_vector&);
 void stop(void);
 // control functions
-bool getAccelerometer(cart_vector&);
-bool getButton(bool&, uint8_t&);
+//bool getAccelerometer(cart_vector&);
+//bool getButton(bool&, uint8_t&);
 
 /////////////////////
 ///// templates /////
@@ -140,21 +194,21 @@ bool getButton(bool&, uint8_t&);
 // template for C++ stream-like Serial output
 template <class Console, typename T>
 Console& operator<<(Console& port, const T& data) {
-  port.print(data);
-  return port;
+    port.print(data);
+    return port;
 }
 // stream-like insertion of cartesian vectors
 template <class Console>
 Console& operator<<(Console& port, const cart_vector& vect) {
-  port << F("<") << vect.x << F(", ") << vect.y << F(", ") << vect.z << F(">");
-  return port;
+    port << F("<") << vect.x << F(", ") << vect.y << F(", ") << vect.z << F(">");
+    return port;
 }
 // stream-like insertion of cylindrical vectors
 /*
 template <class Console>
 Console& operator<<(Console& port, const cyl_vector& vect) {
-  port << F("(") << vect.r << F(", ") << vect.theta << F(", ") << vect.z << F(")");
-  return port;
+    port << F("(") << vect.r << F(", ") << vect.theta << F(", ") << vect.z << F(")");
+    return port;
 }
 */
 
