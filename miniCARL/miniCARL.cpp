@@ -224,10 +224,12 @@ void error(const __FlashStringHelper* err) {
  *
  * @return            the data at that address expressed as a double
  */
+/*
 double parsefloat(uint8_t* buffer) {
     // makes a double* from a uint8_t*, then dereferences it
     return *reinterpret_cast<double*>(buffer);
 }
+*/
 
 /*
  * waits for incoming data and parses it
@@ -309,84 +311,85 @@ uint8_t readPacket(Adafruit_BLE* ble, uint16_t timeout) {
  *
  * @return packet     a data packet with length
 */
-BLE_packet readPacket(Adafruit_BLE& ble, const int timeout) {
-    Serial << F("BLE_packet readPacket(Adafruit_BLE&, uint16_t) called!\n");
-    BLE_packet packet;
+bool BLE_packet::get(Adafruit_BLE& ble, const int timeout) {
+    Serial << F("BLE_packet packet::get(Adafruit_BLE&, uint16_t) called!\n");
+    bool received = false;
 
-    for (int i = timeout; i > 0; i--) {
-        if (packet.length >= 20)
-            break;
-        if ((packet.buffer[1] == 'A') && (packet.length == PACKET_ACC_LEN))
-            break;
-        if ((packet.buffer[1] == 'G') && (packet.length == PACKET_GYRO_LEN))
-            break;
-        if ((packet.buffer[1] == 'M') && (packet.length == PACKET_MAG_LEN))
-            break;
-        if ((packet.buffer[1] == 'Q') && (packet.length == PACKET_QUAT_LEN))
-            break;
-        if ((packet.buffer[1] == 'B') && (packet.length == PACKET_BUTTON_LEN))
-            break;
-        if ((packet.buffer[1] == 'C') && (packet.length == PACKET_COLOR_LEN))
-            break;
-        if ((packet.buffer[1] == 'L') && (packet.length == PACKET_LOCATION_LEN))
-            break;
-
+    for (int timeleft = timeout; timeleft > 0 && !received; timeleft--) {
         while (ble.available()) {
             char c = ble.read();
             if (c == '!') {
-                packet.length = 0;
+                this->len = 0;
             }
-            packet.buffer[packet.length] = c;
-            packet.length++;
-            i = timeout;
+            this->buffer[this->len] = c;
+            this->len++;
+            timeleft = timeout;
         }
 
-        if (i == 0)
-            break;
+        if (this->len >= 20)
+            received = true;
+        if ((this->buffer[1] == 'A') && (this->len == PACKET_ACC_LEN))
+            received = true;
+        if ((this->buffer[1] == 'G') && (this->len == PACKET_GYRO_LEN))
+            received = true;
+        if ((this->buffer[1] == 'M') && (this->len == PACKET_MAG_LEN))
+            received = true;
+        if ((this->buffer[1] == 'Q') && (this->len == PACKET_QUAT_LEN))
+            received = true;
+        if ((this->buffer[1] == 'B') && (this->len == PACKET_BUTTON_LEN))
+            received = true;
+        if ((this->buffer[1] == 'C') && (this->len == PACKET_COLOR_LEN))
+            received = true;
+        if ((this->buffer[1] == 'L') && (this->len == PACKET_LOCATION_LEN))
+            received = true;
 
         delay(1);
     }
 
-    packet.buffer[packet.length] = 0; // null term
+    this->buffer[this->len] = 0; // null term
 
     // If no packet was received before timeout or the packet doesn't start with a '!',
-    // then flush the packet and return a blank packet
-    if (packet.buffer == 0 || packet.buffer[0] != '!') {
-        packet.flush();
-        return packet;
+    // then flush the packet
+    if (this->len == 0 || this->buffer[0] != '!') {
+        this->flush();
     }
 
-    // check checksum!
-    uint8_t xsum = 0;
-    uint8_t checksum = packet.buffer[packet.length - 1];
-    for (uint8_t i = 0; i < packet.length - 1; i++) {
-        xsum += packet.buffer[i];
+    if (this->len != 0) {
+        // check checksum!
+        uint8_t xsum = 0;
+        uint8_t checksum = this->buffer[this->len - 1];
+        for (uint8_t i = 0; i < this->len - 1; i++) {
+            xsum += this->buffer[i];
+        }
+        xsum = ~xsum;
+    
+        // Throw an error message if the checksum's don't match
+        if (xsum != checksum) {
+            Serial.print("Checksum mismatch in packet : ");
+            printHex(this->buffer, this->len+1);
+            this->flush();
+            received = false;
+        }
     }
-    xsum = ~xsum;
 
-    // Throw an error message if the checksum's don't match
-    if (xsum != checksum) {
-        Serial.print("Checksum mismatch in packet : ");
-        printHex(packet.buffer, packet.length+1);
-        packet.flush();
-        return packet;
-    }
-
-    // checksum passed!
-    return packet;
+    return received;
 }
 
 /*
- * extracts vector data from a packet
+ * Extracts vector data from a packet. This is a separate function to take advantage of
+ * the implicit converions (assignment works regardless of the target vector type).
+ * @param packet      the packet object
+ *
+ * @return vect       the cartesian vector to return
  */
 cart_vector vectorFromPacket(BLE_packet& packet) {
     // 2, 6, 10
     cart_vector vect{0,0,0};
-    if (packet.buffer[1] == 'A') {
+    if (packet.type() == 'A') {
         // the data are in 4-byte doubles after the ! and type character
-        vect.x = parsefloat(packet.buffer+2);
-        vect.y = parsefloat(packet.buffer+6);
-        vect.z = parsefloat(packet.buffer+10);
+        vect.x = packet.to_double(2);
+        vect.y = packet.to_double(6);
+        vect.z = packet.to_double(10);
     }
 
     return vect;

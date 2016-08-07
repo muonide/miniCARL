@@ -35,9 +35,9 @@ const uint8_t PWMB = 10; //Speed control
 const uint8_t BIN1 = 11; //Direction
 const uint8_t BIN2 = 12; //Direction
 
-//////////////////////////////
-///// struct definitions /////
-//////////////////////////////
+////////////////////////////////////////
+///// class and struct definitions /////
+////////////////////////////////////////
 
 // forward declaration of vector structs so that each can implicitly convert to the other
 struct cart_vector;
@@ -105,56 +105,68 @@ inline cyl_vector::operator cart_vector(void) const {
  * a class containing a packet buffer and the length of the packet
  */
 class BLE_packet {
-    public:
     // the packet buffer
     uint8_t buffer[READ_BUFSIZE + 1];
     // the length of the packet
-    uint8_t length;
-    // determine the packet's type
-    uint8_t type(void) {
-        return this->buffer[1];
-    }
-    // erase the buffer
-    void flush(void) {
-        length = 0;
-        // zero out the buffer
-        memset(this->buffer, 0, READ_BUFSIZE + 1);
-    }
+    uint8_t len;
+  public:
     // constructor (flushes the buffer before use)
     BLE_packet(void) {
         this->flush();
     }
+    // determine the packet's type
+    uint8_t type(void) const {return this->buffer[1];}
+    // return the length
+    uint8_t length(void) const {return this->len;}
+    // read from the buffer
+    uint8_t read_buffer(uint8_t i) const {return buffer[i];}
+    // receive a BLE packet
+    bool get(Adafruit_BLE&, const int);
+    // convert a buffer location to a double
+    double to_double(const uint8_t index) const {
+        // makes a double* from the address of buffer[i], then dereferences it
+        return *const_cast<double*>(reinterpret_cast<const double*>(this->buffer+index));
+    }
+    // erase the buffer
+    void flush(void) {
+        this->len = 0;
+        // zero out the buffer
+        memset(this->buffer, 0, READ_BUFSIZE + 1);
+    }
     // decay to bool when convenient --- zero-length ==> false (no packet)
-    operator bool(void) const {return (length == 0 ? false : true);}
+    operator bool(void) const {return (this->len == 0 ? false : true);}
 };
 
 /*
  * button class
  */
 class controller_button {
-    public:
     // Is a button pressed?
-    bool is_pressed;
+    bool pressed;
     // which button was pressed (0 if none)
-    uint8_t number;
+    uint8_t num;
+  public:
     // constructor
     controller_button(void) {
         // start as a null button
-        this->is_pressed = false;
-        this->number = 0;
+        this->pressed = false;
+        this->num = 0;
     }
+    // return whether or not it's pressed
+    bool is_pressed(void) const {return this->pressed;}
+    bool number(void) const {return this->num;}
     // a function that reads the data from a packet
     void read_from_packet(const BLE_packet& packet) {
-        if (packet.length != 0 && packet.buffer[1] == 'B') {
+        if (packet.length() != 0 && packet.type() == 'B') {
             // convert "button number" char byte to int
-            this->number = static_cast<uint8_t>(packet.buffer[2] - '0');
+            this->num = static_cast<uint8_t>(packet.read_buffer(2) - '0');
             // convert "pressed or released" char byte to bool
-            this->is_pressed = static_cast<bool>(packet.buffer[3] - '0');
+            this->pressed = static_cast<bool>(packet.read_buffer(3) - '0');
         }
         else {
             // If the length is zero or it's not a button packet, default to false and zero.
-            this->is_pressed = false;
-            this->number = 0;
+            this->pressed = false;
+            this->num = 0;
         }
     }
 };

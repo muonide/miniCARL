@@ -63,7 +63,7 @@ void loop(void) {
 
     // if a packet was received . . .
     // note: packet implicitly converts to a bool
-    if (packet = readPacket(ble, BLE_READPACKET_TIMEOUT)) {
+    if (packet.get(ble, BLE_READPACKET_TIMEOUT)) {
         // . . . check the packet type
         // accelerometer
         if (packet.type() == 'A') {
@@ -77,41 +77,41 @@ void loop(void) {
         // button
         else if (packet.type() == 'B') {
             button.read_from_packet(packet);
-            Serial << F("button ") << button.number;
+            Serial << F("button ") << button.number();
 
             // On button press . . .
-            if (button.is_pressed) {
+            if (button.is_pressed()) {
                 Serial << F(" pressed\n");
                 // Button 1 pressed
-                if (button.number == 1) {
+                if (button.number() == 1) {
                     functionOne();
                 }
                 // Button 2 pressed
-                else if (button.number == 2) {
+                else if (button.number() == 2) {
                     functionTwo();
                 }
                 // Button 3 pressed
-                else if (button.number == 3) {
+                else if (button.number() == 3) {
                     functionThree();
                 }
                 // Button 4 pressed
-                else if (button.number == 4) {
+                else if (button.number() == 4) {
                     functionFour();
                 }
                 // Move forward
-                else if (button.number == 5) {
+                else if (button.number() == 5) {
                     move(forward);
                 }
                 // Move backward
-                else if (button.number == 6) {
+                else if (button.number() == 6) {
                     move(reverse);
                 }
                 // Turn right
-                else if (button.number == 7) {
+                else if (button.number() == 7) {
                     move(right);
                 }
                 // Turn left
-                else if (button.number == 8) {
+                else if (button.number() == 8) {
                     move(left);
                 }
                 else {
@@ -121,16 +121,16 @@ void loop(void) {
             // On button release (i.e. if the button is no longer pressed) . . .
             else {
                 Serial << F(" released\n");
-                if (button.number == 1) {
+                if (button.number() == 1) {
                     functionOneReleased();
                 }
-                else if (button.number == 2) {
+                else if (button.number() == 2) {
                     functionTwoReleased();
                 }
-                else if (button.number == 3) {
+                else if (button.number() == 3) {
                     functionThreeReleased();
                 }
-                else if (button.number == 4) {
+                else if (button.number() == 4) {
                     functionFourReleased();
                 }
                 // stop the motors if one of the arrow keys was released
