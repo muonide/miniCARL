@@ -43,8 +43,8 @@ const uint8_t BIN2 = 12; //Direction
 struct cart_vector;
 struct cyl_vector;
 
-/*
- * general purpose rectangular/Cartesian vector struct
+/**
+ * general purpose rectangular/Cartesian vector struct (x, y, z)
  */
 struct cart_vector {
     // allow implicit conversion to a cylindrical vector (defined below)
@@ -58,8 +58,8 @@ struct cart_vector {
     }
 };
 
-/*
- * general purpose cylindrical vector struct
+/**
+ * general purpose cylindrical vector struct (r, theta, z)
  */
 struct cyl_vector {
     // allow implicit conversion to a cartesian vector (defined below)
@@ -73,7 +73,9 @@ struct cyl_vector {
     }
 };
 
-// member function that allows implicit conversion of cartesian vectors to cylindrical vectors
+/**
+ * member function that allows implicit conversion of cartesian vectors to cylindrical vectors
+ */
 // "inline" keyword avoids compiler complaints about multiple definition
 inline cart_vector::operator cyl_vector(void) const {
     cyl_vector cyl;
@@ -87,7 +89,9 @@ inline cart_vector::operator cyl_vector(void) const {
     return cyl;
 }
 
-// member function that allows implicit conversion of cylindrical vectors to cartesian vectors
+/**
+ * member function that allows implicit conversion of cylindrical vectors to cartesian vectors
+ */
 // "inline" keyword avoids compiler complaints about multiple definition
 inline cyl_vector::operator cart_vector(void) const {
     cart_vector cart;
@@ -101,7 +105,7 @@ inline cyl_vector::operator cart_vector(void) const {
     return cart;
 }
 
-/*
+/**
  * a class containing a packet buffer and the length of the packet
  */
 class BLE_packet {
@@ -110,34 +114,59 @@ class BLE_packet {
     // the length of the packet
     uint8_t len;
   public:
-    // constructor (flushes the buffer before use)
-    BLE_packet(void) {
-        this->flush();
-    }
-    // determine the packet's type
+    /**
+     * determine the packet's type
+     * @param           this function takes no arguments
+     * @return          the character corresponding to the packet's data type
+     */
     uint8_t type(void) const {return this->buffer[1];}
-    // return the length
+    /**
+     * return the packet length
+     * @param           this function takes no arguments
+     * @return          the length
+     */
     uint8_t length(void) const {return this->len;}
-    // read from the buffer
+    /**
+     * read a character from the buffer
+     * @param i         the index in the buffer array
+     * @return          the value at the index
+     */
     uint8_t read_buffer(uint8_t i) const {return buffer[i];}
-    // receive a BLE packet
+    // get a packet from the device
     bool get(Adafruit_BLE&, const int);
-    // convert a buffer location to a double
+    /**
+     * convert a buffer location to a double if it won't result in a segfault
+     * @param index     the index of the buffer array to start at
+     * @return val      a floating-point value
+     */
     double to_double(const uint8_t index) const {
-        // makes a double* from the address of buffer[i], then dereferences it
-        return *const_cast<double*>(reinterpret_cast<const double*>(this->buffer+index));
+        double val = 0.0;
+        // check array bounds
+        if (index <= this->len - sizeof(double)) {
+            // makes a double* from the address of buffer[i], then dereferences it
+            val = *const_cast<double*>(reinterpret_cast<const double*>(this->buffer+index));
+        }
+        return val;
     }
-    // erase the buffer
+    /**
+     * erase all packet data
+     * @param           this function takes no arguments
+     * @return          this function returns no value
+     */
     void flush(void) {
         this->len = 0;
         // zero out the buffer
         memset(this->buffer, 0, READ_BUFSIZE + 1);
     }
-    // decay to bool when convenient --- zero-length ==> false (no packet)
+    // decay to bool when convenient (zero-length ==> false (no packet))
     operator bool(void) const {return (this->len == 0 ? false : true);}
+    // constructor (flushes the buffer before use)
+    BLE_packet(void) {
+        this->flush();
+    }
 };
 
-/*
+/**
  * button class
  */
 class controller_button {
@@ -152,10 +181,23 @@ class controller_button {
         this->pressed = false;
         this->num = 0;
     }
-    // return whether or not it's pressed
+    /**
+     * determine whether or not a button is pressed
+     * @param           this function takes no arguments
+     * @return          whether or not the button is pressed
+     */
     bool is_pressed(void) const {return this->pressed;}
-    bool number(void) const {return this->num;}
-    // a function that reads the data from a packet
+    /**
+     * retrieve the button number
+     * @param           this function takes no arguments
+     * @return          the button's number
+     */
+    uint8_t number(void) const {return this->num;}
+    /**
+     * acquire the data from a packet
+     * @param packet    the packet to be read
+     * @return          this function returns no value
+     */
     void read_from_packet(const BLE_packet& packet) {
         if (packet.length() != 0 && packet.type() == 'B') {
             // convert "button number" char byte to int
@@ -203,19 +245,25 @@ void stop(void);
 ///// templates /////
 /////////////////////
 
-// template for C++ stream-like Serial output
+/**
+ * template for C++ stream-like Serial output
+ */
 template <class Console, typename T>
 Console& operator<<(Console& port, const T& data) {
     port.print(data);
     return port;
 }
-// stream-like insertion of cartesian vectors
+/**
+ * stream-like insertion of cartesian vectors
+ */
 template <class Console>
 Console& operator<<(Console& port, const cart_vector& vect) {
     port << F("<") << vect.x << F(", ") << vect.y << F(", ") << vect.z << F(">");
     return port;
 }
-// stream-like insertion of cylindrical vectors
+/**
+ * stream-like insertion of cylindrical vectors
+ */
 /*
 template <class Console>
 Console& operator<<(Console& port, const cyl_vector& vect) {

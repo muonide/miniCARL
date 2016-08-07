@@ -7,11 +7,11 @@
 ////////////////// Function Definitions ////////////////////////
 ////////////////////////////////////////////////////////////////
 
-/*
+/**
  * moves a motor given a cylindrical vector
- * @param cyl         a cylindrical vector
+ * @param cyl           a cylindrical vector
  *
- * @return            this function returns no value
+ * @return              this function returns no value
  */
 void move(const cyl_vector& cyl) {
     Serial << F("void move(const cyl_vector&) called!\n");
@@ -41,24 +41,24 @@ void move(const cyl_vector& cyl) {
     analogWrite(PWMB, static_cast<uint8_t>(speed * B_diff));
 }
 
-/*
+/**
  * Stops both motors
- * @param             this function takes no arguments
+ * @param               this function takes no arguments
  *
- * @return            this function returns no value
+ * @return              this function returns no value
  */
 void stop(void) {
     analogWrite(PWMA, 0);
     analogWrite(PWMB, 0);
 }
 
-/*
+/**
  * Recieves an accelerometer packet from Bluefruit controller and returns a cartesian
  * vector by reference. Returns false when readPacket times out during one of the
  * samples.
- * @param vect        the (static) cartesian vector to be written to
+ * @param vect          the (static) cartesian vector to be written to
  *
- * @return            whether or not a packet was received
+ * @return              whether or not a packet was received
  */
 /*
 bool getAccelerometer(cart_vector& cart) {
@@ -98,13 +98,13 @@ bool getAccelerometer(cart_vector& cart) {
 }
 */
 
-/*
+/**
  * Recieves a button packet from Bluefruit controller and returns information by
  * reference.
- * @param pressed     whether or not a button is pressed
- * @param button      which button is pressed (if any)
+ * @param pressed       whether or not a button is pressed
+ * @param button        which button is pressed (if any)
  *
- * @return            whether or not a packet was received
+ * @return              whether or not a packet was received
  */
 /*
 bool getButton(bool& pressed, uint8_t& button) {
@@ -132,11 +132,12 @@ bool getButton(bool& pressed, uint8_t& button) {
 }
 */
 
-/*
+/**
  * Initializes the Feather's bluetooth and waits for connection.
- * @param             this function takes no arguments
+ * @param ble           Adafruit BLE object (by reference)
+ * @param name          the broadcast name
  *
- * @return            this function returns no value
+ * @return              this function returns no value
  */
 void initializeBluetooth(Adafruit_BluefruitLE_SPI& ble, const String name) {
     Serial.begin(9600);
@@ -205,10 +206,11 @@ void initializeBluetooth(Adafruit_BluefruitLE_SPI& ble, const String name) {
     //Serial.end();
 }
 
-/*
+/**
  * Crash in the event of a failure
- * @param err         the error message to repeat every 10s 
- * @return            this function returns no value
+ * @param err           the error message to repeat every 10s
+ *
+ * @return              this function returns no value
  */
 void error(const __FlashStringHelper* err) {
     while (true) {
@@ -217,12 +219,12 @@ void error(const __FlashStringHelper* err) {
     }
 }
 
-/*
+/**
  * casts the four bytes at the specified address to a double
  * (i.e. makes *reinterpret_cast<double*>(uint8_t*) look prettier)
- * @param buffer      the specified address
+ * @param buffer        the specified address
  *
- * @return            the data at that address expressed as a double
+ * @return              the data at that address expressed as a double
  */
 /*
 double parsefloat(uint8_t* buffer) {
@@ -231,12 +233,12 @@ double parsefloat(uint8_t* buffer) {
 }
 */
 
-/*
+/**
  * waits for incoming data and parses it
- * @param ble         pointer to Adafruit BLE data array
- * @param timeout     how long to wait before timing out
+ * @param ble           pointer to Adafruit BLE object
+ * @param timeout       how long to wait before timing out
  *
- * @return            0 if something went wrong; packet length if successful
+ * @return              0 if something went wrong; packet length if successful
 */
 /*
 uint8_t readPacket(Adafruit_BLE* ble, uint16_t timeout) {
@@ -304,12 +306,12 @@ uint8_t readPacket(Adafruit_BLE* ble, uint16_t timeout) {
 }
 */
 
-/*
- * waits for incoming data and parses it
- * @param ble         pointer to Adafruit BLE data array
- * @param timeout     how long to wait before timing out
+/**
+ * Waits for incoming data, checks it, and stores it
+ * @param ble           Adafruit BLE object (by reference)
+ * @param timeout       how long to wait before timing out
  *
- * @return packet     a data packet with length
+ * @return received     whether or not a packet was received
 */
 bool BLE_packet::get(Adafruit_BLE& ble, const int timeout) {
     Serial << F("BLE_packet packet::get(Adafruit_BLE&, uint16_t) called!\n");
@@ -375,12 +377,12 @@ bool BLE_packet::get(Adafruit_BLE& ble, const int timeout) {
     return received;
 }
 
-/*
+/**
  * Extracts vector data from a packet. This is a separate function to take advantage of
  * the implicit converions (assignment works regardless of the target vector type).
- * @param packet      the packet object
+ * @param packet        the packet object
  *
- * @return vect       the cartesian vector to return
+ * @return vect         the cartesian vector to return
  */
 cart_vector vectorFromPacket(BLE_packet& packet) {
     // 2, 6, 10
@@ -395,12 +397,12 @@ cart_vector vectorFromPacket(BLE_packet& packet) {
     return vect;
 }
 
-/*
+/**
  * prints a hexadecimal value in plain characters
- * @param  data       pointer to the byte data
- * @param  numBytes   data length in bytes
+ * @param  data         pointer to the byte data
+ * @param  numBytes     data length in bytes
  *
- * @return            this function returns no value
+ * @return              this function returns no value
 */
 void printHex(const uint8_t* data, const uint32_t numBytes) {
     uint32_t szPos;
