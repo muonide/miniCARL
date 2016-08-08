@@ -1,4 +1,4 @@
-/*
+/**
  * MiniCARL Basic Platform
  *
  * @version ????
@@ -17,6 +17,9 @@
 
 #include "miniCARL.h"
 
+// Enter the bot's name
+String BOT_NAME = "This one.";
+
 // Initialize Bluefruit SPI
 Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_RST);
 
@@ -27,9 +30,6 @@ const cyl_vector forward{0, 0, 1};
 const cyl_vector reverse{0, 0, -1};
 const cyl_vector right{0, pi, 1};
 const cyl_vector left{0, -pi, 1};
-
-// Enter the bot's name
-String BOT_NAME = "This one.";
 
 // define button functions here
 void functionOne() {} // button one
@@ -68,7 +68,7 @@ void loop(void) {
         // accelerometer
         if (packet.type() == 'A') {
             // get a vector from the packet
-            vector = vectorFromPacket(packet);
+            vector.read_from_packet(packet);
             // serial debugging
             Serial << F("accelerometer reading: ") << vector << F("\n");
             // move using the vector

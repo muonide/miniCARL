@@ -8,11 +8,10 @@
 ////////////////////////////////////////////////////////////////
 
 /**
- * moves a motor given a cylindrical vector
+ * moves the motors given a cylindrical vector
  * @param cyl           a cylindrical vector
- *
- * @return              this function returns no value
  */
+/*
 void move(const cyl_vector& cyl) {
     Serial << F("void move(const cyl_vector&) called!\n");
     double min_frac = 0.1; // fraction of vector length which maps to zero
@@ -30,11 +29,44 @@ void move(const cyl_vector& cyl) {
 
     // if the z coordinate is negative, reverse the direction
     //motor A
-    digitalWrite(AIN1, (cyl.z < 0 ? HIGH : LOW));
-    digitalWrite(AIN2, (cyl.z < 0 ? LOW : HIGH));
+    digitalWrite(AIN2, (cyl.z < 0 ? HIGH : LOW));
+    digitalWrite(AIN1, (cyl.z < 0 ? LOW : HIGH));
     // motor B
-    digitalWrite(BIN1, (cyl.z < 0 ? HIGH : LOW));
-    digitalWrite(BIN2, (cyl.z < 0 ? LOW : HIGH));
+    digitalWrite(BIN2, (cyl.z < 0 ? HIGH : LOW));
+    digitalWrite(BIN1, (cyl.z < 0 ? LOW : HIGH));
+
+    // use the differential to set the PWM speeds
+    analogWrite(PWMA, static_cast<uint8_t>(speed * A_diff));
+    analogWrite(PWMB, static_cast<uint8_t>(speed * B_diff));
+}
+*/
+
+/**
+ * moves the motors given a cartesian vector
+ * @param cart          a cartesian vector
+ */
+void move(const cart_vector& cart) {
+    Serial << F("void move(const cyl_vector&) called!\n");
+    double min_frac = 0.1; // fraction of vector length which maps to zero
+
+    // The speed depends on the magnitude of the z component as compared to the vector length,
+    // converted to a uint8_t (implicitly)
+    uint8_t speed = (abs(cart.z) >= min_frac * cart.length() ? (abs(cart.z) / cart.length() * 255) : 0);
+
+    // The differential is the multipier that makes the wheels spin at different speeds at
+    // different input angles.
+    // 1 if y <= 0, else --> 0 as y --> length/2, and 0 for y >= length/2
+    double B_diff = (cart.y <= 0 ? 1 : (cart.y >= cart.length()/2 ? 0 : (cart.length() - cart.y) / cart.length()));
+    // 1 if y >= 0, else --> 0 as y --> -length/2, and 0 for y <= -length/2
+    double A_diff = (cart.y >= 0 ? 1 : (cart.y <= -cart.length()/2 ? 0 : (cart.length() + cart.y) / cart.length()));
+
+    // if the z coordinate is negative, reverse the direction
+    //motor A
+    digitalWrite(AIN2, (cart.z < 0 ? HIGH : LOW));
+    digitalWrite(AIN1, (cart.z < 0 ? LOW : HIGH));
+    // motor B
+    digitalWrite(BIN2, (cart.z < 0 ? HIGH : LOW));
+    digitalWrite(BIN1, (cart.z < 0 ? LOW : HIGH));
 
     // use the differential to set the PWM speeds
     analogWrite(PWMA, static_cast<uint8_t>(speed * A_diff));
@@ -43,16 +75,13 @@ void move(const cyl_vector& cyl) {
 
 /**
  * Stops both motors
- * @param               this function takes no arguments
- *
- * @return              this function returns no value
  */
 void stop(void) {
     analogWrite(PWMA, 0);
     analogWrite(PWMB, 0);
 }
 
-/**
+/*
  * Recieves an accelerometer packet from Bluefruit controller and returns a cartesian
  * vector by reference. Returns false when readPacket times out during one of the
  * samples.
@@ -98,7 +127,7 @@ bool getAccelerometer(cart_vector& cart) {
 }
 */
 
-/**
+/*
  * Recieves a button packet from Bluefruit controller and returns information by
  * reference.
  * @param pressed       whether or not a button is pressed
@@ -136,8 +165,6 @@ bool getButton(bool& pressed, uint8_t& button) {
  * Initializes the Feather's bluetooth and waits for connection.
  * @param ble           Adafruit BLE object (by reference)
  * @param name          the broadcast name
- *
- * @return              this function returns no value
  */
 void initializeBluetooth(Adafruit_BluefruitLE_SPI& ble, const String name) {
     Serial.begin(9600);
@@ -209,8 +236,6 @@ void initializeBluetooth(Adafruit_BluefruitLE_SPI& ble, const String name) {
 /**
  * Crash in the event of a failure
  * @param err           the error message to repeat every 10s
- *
- * @return              this function returns no value
  */
 void error(const __FlashStringHelper* err) {
     while (true) {
@@ -219,7 +244,7 @@ void error(const __FlashStringHelper* err) {
     }
 }
 
-/**
+/*
  * casts the four bytes at the specified address to a double
  * (i.e. makes *reinterpret_cast<double*>(uint8_t*) look prettier)
  * @param buffer        the specified address
@@ -233,7 +258,7 @@ double parsefloat(uint8_t* buffer) {
 }
 */
 
-/**
+/*
  * waits for incoming data and parses it
  * @param ble           pointer to Adafruit BLE object
  * @param timeout       how long to wait before timing out
@@ -311,7 +336,7 @@ uint8_t readPacket(Adafruit_BLE* ble, uint16_t timeout) {
  * @param ble           Adafruit BLE object (by reference)
  * @param timeout       how long to wait before timing out
  *
- * @return received     whether or not a packet was received
+ * @return              whether or not a packet was received
 */
 bool BLE_packet::get(Adafruit_BLE& ble, const int timeout) {
     Serial << F("BLE_packet packet::get(Adafruit_BLE&, uint16_t) called!\n");
@@ -378,31 +403,57 @@ bool BLE_packet::get(Adafruit_BLE& ble, const int timeout) {
 }
 
 /**
- * Extracts vector data from a packet. This is a separate function to take advantage of
- * the implicit converions (assignment works regardless of the target vector type).
+ * Extracts vector data from a packet.
  * @param packet        the packet object
  *
- * @return vect         the cartesian vector to return
+ * @return              the cartesian vector to return
  */
-cart_vector vectorFromPacket(BLE_packet& packet) {
-    // 2, 6, 10
-    cart_vector vect{0,0,0};
+void cart_vector::read_from_packet(const BLE_packet& packet) {
     if (packet.type() == 'A') {
         // the data are in 4-byte doubles after the ! and type character
-        vect.x = packet.to_double(2);
-        vect.y = packet.to_double(6);
-        vect.z = packet.to_double(10);
+        this->x = packet.to_double(2);
+        this->y = packet.to_double(6);
+        this->z = packet.to_double(10);
     }
+    // if the vector is an iOS vector, it needs to be inverted
+    if (IS_ANDROID == false) {
+        this->invert();
+        this->x *= 9.8;
+        this->y *= 9.8;
+        this->z *= 9.8;
+    }
+}
 
-    return vect;
+/**
+ * Extracts vector data from a packet.
+ * @param packet        the packet object
+ *
+ * @return              the cylindrical vector to return
+ */
+void cyl_vector::read_from_packet(const BLE_packet& packet) {
+    double x, y, z;
+    if (packet.type() == 'A') {
+        // the data are in 4-byte doubles after the ! and type character
+        x = packet.to_double(2);
+        y = packet.to_double(6);
+        z = packet.to_double(10);
+    }
+    // if the vector is an iOS vector, it needs to be inverted
+    if (IS_ANDROID == false) {
+        x *= -9.8;
+        y *= -9.8;
+        z *= -9.8;
+    }
+    // convert and save
+    this->r = sqrt(x * x + y * y);
+    this->theta = (x != 0 && y != 0 ? atan2(y, x) : 0);
+    this->z = z;
 }
 
 /**
  * prints a hexadecimal value in plain characters
  * @param  data         pointer to the byte data
  * @param  numBytes     data length in bytes
- *
- * @return              this function returns no value
 */
 void printHex(const uint8_t* data, const uint32_t numBytes) {
     uint32_t szPos;

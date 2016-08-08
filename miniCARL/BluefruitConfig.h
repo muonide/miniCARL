@@ -6,7 +6,6 @@ const uint8_t BUFSIZE = 128; // size of the read buffer for incoming data
 const bool VERBOSE_MODE = true; // enables debug output if set to true
 const int BLE_READPACKET_TIMEOUT = 500; // timeout in ms waiting to read a response
 
-
 // HARDWARE UART SETTINGS
 // ----------------------------------------------------------------------------------------------
 // The following macros declare the HW serial port you are using. Uncomment
@@ -16,14 +15,12 @@ const int BLE_READPACKET_TIMEOUT = 500; // timeout in ms waiting to read a respo
     #define BLUEFRUIT_HWSERIAL_NAME Serial1
 #endif
 
-
 // SHARED UART SETTINGS
 // ----------------------------------------------------------------------------------------------
 // The following sets the optional Mode pin. It's recommended, but not required.
 // ----------------------------------------------------------------------------------------------
 const uint8_t BLUEFRUIT_UART_MODE_PIN = -1; // optional; -1 if unused
 const uint8_t BLUEFRUIT_UART_RTS_PIN = -1; // optional; -1 if unused
-
 
 // SHARED SPI SETTINGS
 // ----------------------------------------------------------------------------------------------

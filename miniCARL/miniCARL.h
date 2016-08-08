@@ -26,6 +26,8 @@
 const double pi = 2*asin(1);
 
 // Pins and global variables
+// Android or iOS
+const bool IS_ANDROID = true;
 // Motor A pins
 const uint8_t PWMA = 5; //Speed control
 const uint8_t AIN1 = 9; //Direction
@@ -39,38 +41,131 @@ const uint8_t BIN2 = 12; //Direction
 ///// class and struct definitions /////
 ////////////////////////////////////////
 
+/**
+ * a class containing a packet buffer and the length of the packet
+ */
+class BLE_packet {
+    // the packet buffer
+    uint8_t buffer[READ_BUFSIZE + 1];
+    // the length of the packet
+    uint8_t len;
+  public:
+    /**
+     * determine the packet's type
+     * @return          the character corresponding to the packet's data type
+     */
+    uint8_t type(void) const {return this->buffer[1];}
+    /**
+     * return the packet length
+     * @return          the length
+     */
+    uint8_t length(void) const {return this->len;}
+    /**
+     * read a character from the buffer
+     * @param i         the index in the buffer array
+     * @return          the value at the index
+     */
+    uint8_t read_buffer(uint8_t i) const {
+        return (i >= 0 && i <= this->len ? buffer[i] : 0);
+        }
+    /**
+     * get a packet from the bluetooth receiver
+     */
+    bool get(Adafruit_BLE&, const int);
+    /**
+     * convert a buffer location to a double if it won't result in a segfault
+     * @param index     the index of the buffer array to start at
+     * @return          a floating-point value
+     */
+    double to_double(const uint8_t index) const {
+        double val = 0.0;
+        // check array bounds
+        if (index <= this->len - sizeof(double) && index >= 0) {
+            // makes a double* from the address of buffer[i], then dereferences it
+            val = *const_cast<double*>(reinterpret_cast<const double*>(this->buffer+index));
+        }
+        return val;
+    }
+    /**
+     * erase all packet data
+     */
+    void flush(void) {
+        this->len = 0;
+        // zero out the buffer
+        memset(this->buffer, 0, READ_BUFSIZE + 1);
+    }
+    /**
+     * decay to bool when convenient (zero-length ==> false (no packet))
+     */
+    operator bool(void) const {return (this->len == 0 ? false : true);}
+    // constructor (flushes the buffer before use)
+    BLE_packet(void) {
+        this->flush();
+    }
+};
+
 // forward declaration of vector structs so that each can implicitly convert to the other
-struct cart_vector;
-struct cyl_vector;
+class cart_vector;
+class cyl_vector;
 
 /**
  * general purpose rectangular/Cartesian vector struct (x, y, z)
  */
-struct cart_vector {
-    // allow implicit conversion to a cylindrical vector (defined below)
-    operator cyl_vector(void) const;
-    // mutually orthogonal and linear
+class cart_vector {
+  public:
     double x, y, z;
-    // easily acquire the length on demand
+    /**
+     * allow implicit conversion to a cylindrical vector (defined below)
+     */
+    operator cyl_vector(void) const;
+    /**
+     * calculate the length on demand
+     * @return          the length of the vector
+     */
     double length(void) const {
         // cartesian distance formula
         return sqrt(this->x * this->x + this->y * this->y + this->z * this->z);
     }
+    void invert(void) {
+        this->x = -this->x;
+        this->y = -this->y;
+        this->z = -this->z;
+    }
+    /*
+     * get the data from a packet
+     */
+    void read_from_packet(const BLE_packet& packet);
 };
 
 /**
  * general purpose cylindrical vector struct (r, theta, z)
  */
-struct cyl_vector {
-    // allow implicit conversion to a cartesian vector (defined below)
-    operator cart_vector(void) const;
-    // mutually orthogonal, but theta is angular
+class cyl_vector {
+  public:
     double r, theta, z;
-    // easily acquire the length on demand
+    /**
+     * allow implicit conversion to a cartesian vector (defined below)
+     */
+    operator cart_vector(void) const;
+    /**
+     * calculate the length on demand
+     * @return          the length of the vector
+     */
     double length(void) const {
         // pythagorean theorem
         return sqrt(this->r * this->r + this->z * this->z);
     }
+    void invert(void) {
+        this->theta += pi;
+        if (this->theta >= 2*pi) {
+            this->theta -= pi;
+        }
+        this->z = -this->z;
+    }
+    /*
+     * get the data from a packet
+     */
+    void read_from_packet(const BLE_packet& packet);
 };
 
 /**
@@ -106,67 +201,6 @@ inline cyl_vector::operator cart_vector(void) const {
 }
 
 /**
- * a class containing a packet buffer and the length of the packet
- */
-class BLE_packet {
-    // the packet buffer
-    uint8_t buffer[READ_BUFSIZE + 1];
-    // the length of the packet
-    uint8_t len;
-  public:
-    /**
-     * determine the packet's type
-     * @param           this function takes no arguments
-     * @return          the character corresponding to the packet's data type
-     */
-    uint8_t type(void) const {return this->buffer[1];}
-    /**
-     * return the packet length
-     * @param           this function takes no arguments
-     * @return          the length
-     */
-    uint8_t length(void) const {return this->len;}
-    /**
-     * read a character from the buffer
-     * @param i         the index in the buffer array
-     * @return          the value at the index
-     */
-    uint8_t read_buffer(uint8_t i) const {return buffer[i];}
-    // get a packet from the device
-    bool get(Adafruit_BLE&, const int);
-    /**
-     * convert a buffer location to a double if it won't result in a segfault
-     * @param index     the index of the buffer array to start at
-     * @return val      a floating-point value
-     */
-    double to_double(const uint8_t index) const {
-        double val = 0.0;
-        // check array bounds
-        if (index <= this->len - sizeof(double)) {
-            // makes a double* from the address of buffer[i], then dereferences it
-            val = *const_cast<double*>(reinterpret_cast<const double*>(this->buffer+index));
-        }
-        return val;
-    }
-    /**
-     * erase all packet data
-     * @param           this function takes no arguments
-     * @return          this function returns no value
-     */
-    void flush(void) {
-        this->len = 0;
-        // zero out the buffer
-        memset(this->buffer, 0, READ_BUFSIZE + 1);
-    }
-    // decay to bool when convenient (zero-length ==> false (no packet))
-    operator bool(void) const {return (this->len == 0 ? false : true);}
-    // constructor (flushes the buffer before use)
-    BLE_packet(void) {
-        this->flush();
-    }
-};
-
-/**
  * button class
  */
 class controller_button {
@@ -183,20 +217,17 @@ class controller_button {
     }
     /**
      * determine whether or not a button is pressed
-     * @param           this function takes no arguments
      * @return          whether or not the button is pressed
      */
     bool is_pressed(void) const {return this->pressed;}
     /**
      * retrieve the button number
-     * @param           this function takes no arguments
      * @return          the button's number
      */
     uint8_t number(void) const {return this->num;}
     /**
      * acquire the data from a packet
      * @param packet    the packet to be read
-     * @return          this function returns no value
      */
     void read_from_packet(const BLE_packet& packet) {
         if (packet.length() != 0 && packet.type() == 'B') {
@@ -220,8 +251,8 @@ class controller_button {
 // bluefruit functions
 void initializeBluetooth(Adafruit_BluefruitLE_SPI&, const String);
 //uint8_t readPacket(Adafruit_BLE*, uint16_t);
-BLE_packet readPacket(Adafruit_BLE&, const int);
-double parsefloat(uint8_t*);
+//BLE_packet readPacket(Adafruit_BLE&, const int);
+//double parsefloat(uint8_t*);
 void error(const __FlashStringHelper*);
 void printHex(const uint8_t*, const uint32_t);
 // button functions
@@ -235,7 +266,8 @@ void functionFour(); // button four
 void functionFourReleased();
 // movement functions
 cart_vector vectorFromPacket(BLE_packet&);
-void move(const cyl_vector&);
+//void move(const cyl_vector&);
+void move(const cart_vector&);
 void stop(void);
 // control functions
 //bool getAccelerometer(cart_vector&);
@@ -261,7 +293,7 @@ Console& operator<<(Console& port, const cart_vector& vect) {
     port << F("<") << vect.x << F(", ") << vect.y << F(", ") << vect.z << F(">");
     return port;
 }
-/**
+/*
  * stream-like insertion of cylindrical vectors
  */
 /*
