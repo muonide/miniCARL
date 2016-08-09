@@ -5,6 +5,7 @@
 const uint8_t BUFSIZE = 128; // size of the read buffer for incoming data
 const bool VERBOSE_MODE = true; // enables debug output if set to true
 const int BLE_READPACKET_TIMEOUT = 500; // timeout in ms waiting to read a response
+const unsigned int INACTIVITY_TIMEOUT = 5000; // time to wait for packets before stopping
 
 // HARDWARE UART SETTINGS
 // ----------------------------------------------------------------------------------------------

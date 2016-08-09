@@ -1,45 +1,8 @@
 #include "miniCARL.h"
 
-// buffers
-//uint8_t packetbuffer[READ_BUFSIZE+1]; // buffer to hold incoming characters
-
-////////////////////////////////////////////////////////////////
-////////////////// Function Definitions ////////////////////////
-////////////////////////////////////////////////////////////////
-
-/**
- * moves the motors given a cylindrical vector
- * @param cyl           a cylindrical vector
- */
-/*
-void move(const cyl_vector& cyl) {
-    Serial << F("void move(const cyl_vector&) called!\n");
-    double min_frac = 0.1; // fraction of vector length which maps to zero
-
-    // The speed depends on the magnitude of the z component as compared to the vector length,
-    // converted to a uint8_t (implicitly)
-    uint8_t speed = (abs(cyl.z) >= min_frac * cyl.length() ? (abs(cyl.z) / cyl.length() * 255) : 0);
-    
-    // The differential is the multipier that makes the wheels spin at different speeds at
-    // different input angles.
-    // 1 if theta <= 0, else --> 0 as theta --> +pi/2, and 0 for theta >= +pi/2
-    double A_diff = (cyl.theta <= 0 ? 1 : (cyl.theta >= pi/2 ? 0 : (pi - cyl.theta) / pi));
-    // 1 if theta >= 0, else --> 0 as theta --> -pi/2, and 0 for theta <= -pi/2
-    double B_diff = (cyl.theta >= 0 ? 1 : (cyl.theta <= -pi/2 ? 0 : (pi + cyl.theta) / pi));
-
-    // if the z coordinate is negative, reverse the direction
-    //motor A
-    digitalWrite(AIN2, (cyl.z < 0 ? HIGH : LOW));
-    digitalWrite(AIN1, (cyl.z < 0 ? LOW : HIGH));
-    // motor B
-    digitalWrite(BIN2, (cyl.z < 0 ? HIGH : LOW));
-    digitalWrite(BIN1, (cyl.z < 0 ? LOW : HIGH));
-
-    // use the differential to set the PWM speeds
-    analogWrite(PWMA, static_cast<uint8_t>(speed * A_diff));
-    analogWrite(PWMB, static_cast<uint8_t>(speed * B_diff));
-}
-*/
+////////////////////////////////
+///// Function Definitions /////
+////////////////////////////////
 
 /**
  * moves the motors given a cartesian vector
@@ -54,7 +17,7 @@ void move(const cart_vector& cart) {
     uint8_t speed = (abs(cart.z) >= min_frac * cart.length() ? (abs(cart.z) / cart.length() * 255) : 0);
 
     // The differential is the multipier that makes the wheels spin at different speeds at
-    // different input angles.
+    // different input angles. (ignores x)
     // 1 if y <= 0, else --> 0 as y --> length/2, and 0 for y >= length/2
     double B_diff = (cart.y <= 0 ? 1 : (cart.y >= cart.length()/2 ? 0 : (cart.length() - cart.y) / cart.length()));
     // 1 if y >= 0, else --> 0 as y --> -length/2, and 0 for y <= -length/2
@@ -62,11 +25,11 @@ void move(const cart_vector& cart) {
 
     // if the z coordinate is negative, reverse the direction
     //motor A
-    digitalWrite(AIN2, (cart.z < 0 ? HIGH : LOW));
     digitalWrite(AIN1, (cart.z < 0 ? LOW : HIGH));
+    digitalWrite(AIN2, (cart.z < 0 ? HIGH : LOW));
     // motor B
-    digitalWrite(BIN2, (cart.z < 0 ? HIGH : LOW));
     digitalWrite(BIN1, (cart.z < 0 ? LOW : HIGH));
+    digitalWrite(BIN2, (cart.z < 0 ? HIGH : LOW));
 
     // use the differential to set the PWM speeds
     analogWrite(PWMA, static_cast<uint8_t>(speed * A_diff));
@@ -74,92 +37,12 @@ void move(const cart_vector& cart) {
 }
 
 /**
- * Stops both motors
+ * stops both motors
  */
 void stop(void) {
     analogWrite(PWMA, 0);
     analogWrite(PWMB, 0);
 }
-
-/*
- * Recieves an accelerometer packet from Bluefruit controller and returns a cartesian
- * vector by reference. Returns false when readPacket times out during one of the
- * samples.
- * @param vect          the (static) cartesian vector to be written to
- *
- * @return              whether or not a packet was received
- */
-/*
-bool getAccelerometer(cart_vector& cart) {
-    Serial << F("bool getAccelerometer(cart_vector&) called!\n");
-    bool packetReceived = true;
-    const uint8_t samples = 2; // the number of times to loop
-    const uint8_t interval = 30; // sample delay interval
-    const uint8_t weight = 5; // weighting of new samples
-
-    for (int i = 0; i < samples && packetReceived; i++) {
-        // Wait for new data to arrive
-        uint8_t len = readPacket(&ble, BLE_READPACKET_TIMEOUT);
-        Serial << F("len = ") << len << "\n";
-
-        //Commands recieved from bluetooth accelerometer
-        if(len != 0) {
-            // If accelerometer packet recieved
-            if(packetbuffer[1] == 'A') {
-                cart.x += weight*parsefloat(packetbuffer+2);
-                cart.y += weight*parsefloat(packetbuffer+6);
-                cart.z += weight*parsefloat(packetbuffer+10);
-            }
-        }
-        else {
-                packetReceived = false;
-        }
-        delay(interval);
-    }
-
-    if (packetReceived) {
-        cart.x /= weight*samples+1;
-        cart.y /= weight*samples+1;
-        cart.z /= weight*samples+1;
-    }
-
-    return packetReceived;
-}
-*/
-
-/*
- * Recieves a button packet from Bluefruit controller and returns information by
- * reference.
- * @param pressed       whether or not a button is pressed
- * @param button        which button is pressed (if any)
- *
- * @return              whether or not a packet was received
- */
-/*
-bool getButton(bool& pressed, uint8_t& button) {
-    Serial << F("bool getButton(bool&, uint8_t&) called!\n");
-    bool packetReceived = false;
-
-    // Wait for new data to arrive
-    uint8_t len = readPacket(&ble, BLE_READPACKET_TIMEOUT);
-    Serial << F("len = ") << len << F("\n");
-
-    //Commands recieved from bluetooth buttons
-    if(len != 0) {
-        // If button packet recieved
-        if(packetbuffer[1] == 'B') {
-            // Convert "pressed or released" char byte to bool
-            pressed = static_cast<bool>(packetbuffer[3] - '0');
-            // Convert "button number" char byte to int
-            button = static_cast<uint8_t>(packetbuffer[2] - '0');
-            // confirm receipt of packet
-            packetReceived = true;
-        }
-    }
-
-    return packetReceived;
-}
-*/
 
 /**
  * Initializes the Feather's bluetooth and waits for connection.
@@ -244,93 +127,6 @@ void error(const __FlashStringHelper* err) {
     }
 }
 
-/*
- * casts the four bytes at the specified address to a double
- * (i.e. makes *reinterpret_cast<double*>(uint8_t*) look prettier)
- * @param buffer        the specified address
- *
- * @return              the data at that address expressed as a double
- */
-/*
-double parsefloat(uint8_t* buffer) {
-    // makes a double* from a uint8_t*, then dereferences it
-    return *reinterpret_cast<double*>(buffer);
-}
-*/
-
-/*
- * waits for incoming data and parses it
- * @param ble           pointer to Adafruit BLE object
- * @param timeout       how long to wait before timing out
- *
- * @return              0 if something went wrong; packet length if successful
-*/
-/*
-uint8_t readPacket(Adafruit_BLE* ble, uint16_t timeout) {
-    uint16_t origtimeout = timeout, replyidx = 0;
-
-    memset(packetbuffer, 0, READ_BUFSIZE);
-
-    while (timeout--) {
-        if (replyidx >= 20)
-            break;
-        if ((packetbuffer[1] == 'A') && (replyidx == PACKET_ACC_LEN))
-            break;
-        if ((packetbuffer[1] == 'G') && (replyidx == PACKET_GYRO_LEN))
-            break;
-        if ((packetbuffer[1] == 'M') && (replyidx == PACKET_MAG_LEN))
-            break;
-        if ((packetbuffer[1] == 'Q') && (replyidx == PACKET_QUAT_LEN))
-            break;
-        if ((packetbuffer[1] == 'B') && (replyidx == PACKET_BUTTON_LEN))
-            break;
-        if ((packetbuffer[1] == 'C') && (replyidx == PACKET_COLOR_LEN))
-            break;
-        if ((packetbuffer[1] == 'L') && (replyidx == PACKET_LOCATION_LEN))
-            break;
-
-        while (ble->available()) {
-            char c = ble->read();
-            if (c == '!') {
-                replyidx = 0;
-            }
-            packetbuffer[replyidx] = c;
-            replyidx++;
-            timeout = origtimeout;
-        }
-
-        if (timeout == 0) break;
-        delay(1);
-    }
-
-    packetbuffer[replyidx] = 0; // null term
-
-    if (!replyidx) // no data or timeout 
-        return 0;
-    if (packetbuffer[0] != '!') // doesn't start with '!' packet beginning
-        return 0;
-
-    // check checksum!
-    uint8_t xsum = 0;
-    uint8_t checksum = packetbuffer[replyidx-1];
-
-    for (uint8_t i=0; i<replyidx-1; i++) {
-        xsum += packetbuffer[i];
-    }
-    xsum = ~xsum;
-
-    // Throw an error message if the checksum's don't match
-    if (xsum != checksum) {
-        Serial.print("Checksum mismatch in packet : ");
-        printHex(packetbuffer, replyidx+1);
-        return 0;
-    }
-
-    // checksum passed!
-    return replyidx;
-}
-*/
-
 /**
  * Waits for incoming data, checks it, and stores it
  * @param ble           Adafruit BLE object (by reference)
@@ -338,11 +134,12 @@ uint8_t readPacket(Adafruit_BLE* ble, uint16_t timeout) {
  *
  * @return              whether or not a packet was received
 */
-bool BLE_packet::get(Adafruit_BLE& ble, const int timeout) {
+bool BLE_packet::get(Adafruit_BLE& ble, const unsigned int timeout) {
     Serial << F("BLE_packet packet::get(Adafruit_BLE&, uint16_t) called!\n");
     bool received = false;
+    unsigned long int call_time = millis();
 
-    for (int timeleft = timeout; timeleft > 0 && !received; timeleft--) {
+    while(millis() - call_time <= timeout && !received) {
         while (ble.available()) {
             char c = ble.read();
             if (c == '!') {
@@ -350,7 +147,7 @@ bool BLE_packet::get(Adafruit_BLE& ble, const int timeout) {
             }
             this->buffer[this->len] = c;
             this->len++;
-            timeleft = timeout;
+            call_time = millis();
         }
 
         if (this->len >= 20)
@@ -474,3 +271,37 @@ void printHex(const uint8_t* data, const uint32_t numBytes) {
     }
     Serial.println();
 }
+
+/**
+ * moves the motors given a cylindrical vector
+ * @param cyl           a cylindrical vector
+ */
+/*
+void move(const cyl_vector& cyl) {
+    Serial << F("void move(const cyl_vector&) called!\n");
+    double min_frac = 0.1; // fraction of vector length which maps to zero
+
+    // The speed depends on the magnitude of the z component as compared to the vector length,
+    // converted to a uint8_t (implicitly)
+    uint8_t speed = (abs(cyl.z) >= min_frac * cyl.length() ? (abs(cyl.z) / cyl.length() * 255) : 0);
+    
+    // The differential is the multipier that makes the wheels spin at different speeds at
+    // different input angles.
+    // 1 if theta <= 0, else --> 0 as theta --> +pi/2, and 0 for theta >= +pi/2
+    double A_diff = (cyl.theta <= 0 ? 1 : (cyl.theta >= pi/2 ? 0 : (pi - cyl.theta) / pi));
+    // 1 if theta >= 0, else --> 0 as theta --> -pi/2, and 0 for theta <= -pi/2
+    double B_diff = (cyl.theta >= 0 ? 1 : (cyl.theta <= -pi/2 ? 0 : (pi + cyl.theta) / pi));
+
+    // if the z coordinate is negative, reverse the direction
+    //motor A
+    digitalWrite(AIN2, (cyl.z < 0 ? HIGH : LOW));
+    digitalWrite(AIN1, (cyl.z < 0 ? LOW : HIGH));
+    // motor B
+    digitalWrite(BIN2, (cyl.z < 0 ? HIGH : LOW));
+    digitalWrite(BIN1, (cyl.z < 0 ? LOW : HIGH));
+
+    // use the differential to set the PWM speeds
+    analogWrite(PWMA, static_cast<uint8_t>(speed * A_diff));
+    analogWrite(PWMB, static_cast<uint8_t>(speed * B_diff));
+}
+*/

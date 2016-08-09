@@ -60,13 +60,15 @@ void loop(void) {
     BLE_packet packet;
     cart_vector vector{0,0,0};
     controller_button button;
+    static unsigned long int timer = millis();
 
     // if a packet was received . . .
-    // note: packet implicitly converts to a bool
     if (packet.get(ble, BLE_READPACKET_TIMEOUT)) {
         // . . . check the packet type
         // accelerometer
         if (packet.type() == 'A') {
+            // reset the timer
+            timer = millis();
             // get a vector from the packet
             vector.read_from_packet(packet);
             // serial debugging
@@ -76,7 +78,11 @@ void loop(void) {
         }
         // button
         else if (packet.type() == 'B') {
+            // reset the timer
+            timer = millis();
+            // extract the data from the packet
             button.read_from_packet(packet);
+            // serial debugging
             Serial << F("button ") << button.number();
 
             // On button press . . .
@@ -141,89 +147,15 @@ void loop(void) {
         }
         // other type
         else {
-            Serial << F("No action taken.\n");
+            // reset the timer
+            timer = millis();
+            // serial debugging
+            Serial << F("Not implemented.\n");
         }
+    }
+    // else, if a packet was not received, and it's been longer than the timeout . . .
+    else if (millis() - timer >= INACTIVITY_TIMEOUT) {
+        // . . . then stop the motors
+        stop();
     }
 }
-
-/*// (old void loop(void) preserved)
-void loop(void) {
-    Serial << F("void loop(void) called!\n");
-    static cart_vector vector{0,0,0};
-    static bool pressed; // whether or not the button is pressed
-    static uint8_t button; // which button is pressed, if any
-
-    if(getButton(pressed, button)) {
-        Serial << F("button ") << button;
-
-        // On button press . . .
-        if(pressed) {
-            Serial << F(" pressed\n");
-            // Button 1 pressed
-            if(button == 1) {
-                functionOne();
-            }
-            // Button 2 pressed
-            else if(button == 2) {
-                functionTwo();
-            }
-            // Button 3 pressed
-            else if(button == 3) {
-                functionThree();
-            }
-            // Button 4 pressed
-            else if(button == 4) {
-                functionFour();
-            }
-            // Move forward
-            else if(button == 5) {
-                move(forward);
-            }
-            // Move backward
-            else if(button == 6) {
-                move(reverse);
-            }
-            // Turn right
-            else if(button == 7) {
-                move(right);
-            }
-            // Turn left
-            else if(button == 8) {
-                move(left);
-            }
-            else {
-                Serial << F("not implemented\n");
-            }
-        }
-        // On button release (i.e. if the button is no longer pressed) . . .
-        else {
-            Serial << F(" released\n");
-            if (button == 1) {
-                functionOneReleased();
-            }
-            else if (button == 2) {
-                functionTwoReleased();
-            }
-            else if (button == 3) {
-                functionThreeReleased();
-            }
-            else if (button == 4) {
-                functionFourReleased();
-            }
-            // stop the motors if one of the arrow keys was released
-            else {
-                stop();
-            }
-        }
-    }
-    // otherwise, if the accelerometer is active . . .
-    else if(getAccelerometer(vector)) {
-        // serial debugging
-        Serial << F("accelerometer reading: ") << vector << F("\n");
-        move(vector);
-    }
-    else {
-        Serial << F("No action taken\n");
-    }
-}
-*/

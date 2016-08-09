@@ -25,7 +25,10 @@
 // pi
 const double pi = 2*asin(1);
 
-// Pins and global variables
+/////////////////////////////////////
+///// Pins and global variables /////
+/////////////////////////////////////
+
 // Android or iOS
 const bool IS_ANDROID = true;
 // Motor A pins
@@ -71,7 +74,7 @@ class BLE_packet {
     /**
      * get a packet from the bluetooth receiver
      */
-    bool get(Adafruit_BLE&, const int);
+    bool get(Adafruit_BLE&, const unsigned int);
     /**
      * convert a buffer location to a double if it won't result in a segfault
      * @param index     the index of the buffer array to start at
@@ -250,11 +253,12 @@ class controller_button {
 
 // bluefruit functions
 void initializeBluetooth(Adafruit_BluefruitLE_SPI&, const String);
-//uint8_t readPacket(Adafruit_BLE*, uint16_t);
-//BLE_packet readPacket(Adafruit_BLE&, const int);
-//double parsefloat(uint8_t*);
 void error(const __FlashStringHelper*);
 void printHex(const uint8_t*, const uint32_t);
+// movement functions
+//void move(const cyl_vector&);
+void move(const cart_vector&);
+void stop(void);
 // button functions
 void functionOne(); // button one
 void functionOneReleased();
@@ -264,14 +268,6 @@ void functionThree(); // button three
 void functionThreeReleased();
 void functionFour(); // button four
 void functionFourReleased();
-// movement functions
-cart_vector vectorFromPacket(BLE_packet&);
-//void move(const cyl_vector&);
-void move(const cart_vector&);
-void stop(void);
-// control functions
-//bool getAccelerometer(cart_vector&);
-//bool getButton(bool&, uint8_t&);
 
 /////////////////////
 ///// templates /////
