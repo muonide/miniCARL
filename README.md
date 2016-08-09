@@ -7,7 +7,9 @@ You can add new functionality or modify this program. For instance, you'll note 
 
 To program the miniCARL:
 1. Download the miniCARL folder and load into the Arduino IDE. Make sure you replace ``InsertBotNameHere'' with the name of your bot; keep that name in quotes or it won't work.
+
 2. Ensure that the motor pins and any accessories are correctly mapped in the program. Motor pins, etc. are set in miniCARL.h, and Bluefruit LE pins are set in BluefruitConfig.h.
+
 3. Upload the sketch to the Feather.
 
 To control the bot, you'll need to download the Adafruit Bluefruit Connect LE app for your smartphone ([Android](https://play.google.com/store/apps/details?id=com.adafruit.bluefruit.le.connect&hl=en) or [iOS](https://itunes.apple.com/us/app/adafruit-bluefruit-le-connect/id830125974?mt=8)) or use the [ABLE app](https://github.com/adafruit/adafruit-bluefruit-le-desktop/releases) on a laptop.
