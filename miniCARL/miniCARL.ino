@@ -18,7 +18,7 @@
 #include "miniCARL.h"
 
 // Enter the bot's name
-String BOT_NAME = "This one.";
+const String BOT_NAME = "InsertBotNameHere";
 
 // Initialize Bluefruit SPI
 Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_RST);
@@ -41,6 +41,10 @@ void functionThreeReleased() {}
 void functionFour() {} // button four
 void functionFourReleased() {}
 
+// OS selection variable (set with a jumper)
+bool IS_ANDROID = true;
+
+// to be run once at startup
 void setup(void) {
     // Declare motor controller pin modes
     pinMode(PWMA, OUTPUT);
@@ -49,6 +53,12 @@ void setup(void) {
     pinMode(PWMB, OUTPUT);
     pinMode(BIN1, OUTPUT);
     pinMode(BIN2, OUTPUT);
+    pinMode(OS_SELECT, INPUT);
+    
+    // select Android/iOS-style vector parsing
+    if (OS_SELECT == LOW) {
+        IS_ANDROID = false;
+    }
 
     // Setup bluetooth and wait for connection
     initializeBluetooth(ble, BOT_NAME);
@@ -56,9 +66,10 @@ void setup(void) {
     //Serial.begin(9600);
 }
 
+// to be run repeatedly indefinitely
 void loop(void) {
     BLE_packet packet;
-    cart_vector vector{0,0,0};
+    cart_vector vector{0, 0, 0};
     controller_button button;
     static unsigned long int timer = millis();
 

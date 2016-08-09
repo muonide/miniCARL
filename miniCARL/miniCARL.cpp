@@ -14,7 +14,7 @@ void move(const cart_vector& cart) {
 
     // The speed depends on the magnitude of the z component as compared to the vector length,
     // converted to a uint8_t (implicitly)
-    uint8_t speed = (abs(cart.z) >= min_frac * cart.length() ? (abs(cart.z) / cart.length() * 255) : 0);
+    uint8_t speed = (abs(cart.z) >= min_frac * cart.length() ? (abs(cart.z) / cart.length() * MAX_SPEED_LEVEL) : 0);
 
     // The differential is the multipier that makes the wheels spin at different speeds at
     // different input angles. (ignores x)
@@ -283,7 +283,7 @@ void move(const cyl_vector& cyl) {
 
     // The speed depends on the magnitude of the z component as compared to the vector length,
     // converted to a uint8_t (implicitly)
-    uint8_t speed = (abs(cyl.z) >= min_frac * cyl.length() ? (abs(cyl.z) / cyl.length() * 255) : 0);
+    uint8_t speed = (abs(cyl.z) >= min_frac * cyl.length() ? (abs(cyl.z) / cyl.length() * MAX_SPEED_LEVEL) : 0);
     
     // The differential is the multipier that makes the wheels spin at different speeds at
     // different input angles.

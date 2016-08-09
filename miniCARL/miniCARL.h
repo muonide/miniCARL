@@ -22,23 +22,27 @@
 // other libraries
 #include <math.h>
 
-// pi
-const double pi = 2*asin(1);
-
 /////////////////////////////////////
 ///// Pins and global variables /////
 /////////////////////////////////////
 
-// Android or iOS
-const bool IS_ANDROID = true;
-// Motor A pins
+// pi (for angular calculations)
+const double pi = 2*asin(1);
+// Android or iOS (set with jumper on board)
+// has to be extern to make the compiler happy
+extern bool IS_ANDROID;
+// Android/iOS selector jumper pin
+const uint8_t OS_SELECT = 13;
+// motor A pins
 const uint8_t PWMA = 5; //Speed control
 const uint8_t AIN1 = 9; //Direction
 const uint8_t AIN2 = 6; //Direction
-//Motor B pins
+// motor B pins
 const uint8_t PWMB = 10; //Speed control
 const uint8_t BIN1 = 11; //Direction
 const uint8_t BIN2 = 12; //Direction
+// motor speed mapping constants
+const uint8_t MAX_SPEED_LEVEL = 255;
 
 ////////////////////////////////////////
 ///// class and struct definitions /////
@@ -85,7 +89,7 @@ class BLE_packet {
         // check array bounds
         if (index <= this->len - sizeof(double) && index >= 0) {
             // makes a double* from the address of buffer[i], then dereferences it
-            val = *const_cast<double*>(reinterpret_cast<const double*>(this->buffer+index));
+            val = *const_cast<double*>(reinterpret_cast<const double*>(this->buffer + index));
         }
         return val;
     }
@@ -117,9 +121,7 @@ class cyl_vector;
 class cart_vector {
   public:
     double x, y, z;
-    /**
-     * allow implicit conversion to a cylindrical vector (defined below)
-     */
+    // allow implicit conversion to a cylindrical vector (defined below)
     operator cyl_vector(void) const;
     /**
      * calculate the length on demand
@@ -129,14 +131,15 @@ class cart_vector {
         // cartesian distance formula
         return sqrt(this->x * this->x + this->y * this->y + this->z * this->z);
     }
+    /**
+     * invert the vector (point it in the opposite direction)
+     */
     void invert(void) {
         this->x = -this->x;
         this->y = -this->y;
         this->z = -this->z;
     }
-    /*
-     * get the data from a packet
-     */
+    // get the data from a packet
     void read_from_packet(const BLE_packet& packet);
 };
 
@@ -146,9 +149,7 @@ class cart_vector {
 class cyl_vector {
   public:
     double r, theta, z;
-    /**
-     * allow implicit conversion to a cartesian vector (defined below)
-     */
+    // allow implicit conversion to a cartesian vector (defined below)
     operator cart_vector(void) const;
     /**
      * calculate the length on demand
@@ -158,21 +159,22 @@ class cyl_vector {
         // pythagorean theorem
         return sqrt(this->r * this->r + this->z * this->z);
     }
+    /**
+     * invert the vector (point it in the opposite direction)
+     */
     void invert(void) {
         this->theta += pi;
         if (this->theta >= 2*pi) {
-            this->theta -= pi;
+            this->theta -= 2*pi;
         }
         this->z = -this->z;
     }
-    /*
-     * get the data from a packet
-     */
+    // get the data from a packet
     void read_from_packet(const BLE_packet& packet);
 };
 
 /**
- * member function that allows implicit conversion of cartesian vectors to cylindrical vectors
+ * allows implicit conversion of cartesian vectors to cylindrical vectors
  */
 // "inline" keyword avoids compiler complaints about multiple definition
 inline cart_vector::operator cyl_vector(void) const {
@@ -188,7 +190,7 @@ inline cart_vector::operator cyl_vector(void) const {
 }
 
 /**
- * member function that allows implicit conversion of cylindrical vectors to cartesian vectors
+ * allows implicit conversion of cylindrical vectors to cartesian vectors
  */
 // "inline" keyword avoids compiler complaints about multiple definition
 inline cyl_vector::operator cart_vector(void) const {
