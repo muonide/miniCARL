@@ -6,6 +6,7 @@ This tiny cousin of the original CARLbot has an Adafruit Feather 32u4 Bluefruit 
 You can add new functionality or modify this program. For instance, you'll note in the function void loop(void) a series of if (packet.type() == 'char') and if (button.number() == number) statements that contain the motion control. You can adjust the speed in controller mode by changing the standard direction vectors in miniCARL.ino or by simply changing MAX_SPEED_LEVEL in miniCARL.h. If you do not issue any commands for five seconds, then the bot will stop moving automatically.
 
 To program the miniCARL:
+
 1. Download the miniCARL folder and load into the Arduino IDE. Make sure you replace ``InsertBotNameHere'' with the name of your bot; keep that name in quotes or it won't work.
 
 2. Ensure that the motor pins and any accessories are correctly mapped in the program. Motor pins, etc. are set in miniCARL.h, and Bluefruit LE pins are set in BluefruitConfig.h.
