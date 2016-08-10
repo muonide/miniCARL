@@ -3,14 +3,11 @@
  *
  * @version ????
  *
- * This program provides the basic structuring for a miniCARL bot. This file
- * contains the scaffolding for the bot's movemement and controls, while
- * miniCARL.h and miniCARL.cpp contain essential objects, functions, and
+ * This file contains the scaffolding for the bot's movemement and controls,
+ * while miniCARL.h and miniCARL.cpp contain essential objects, functions, and
  * templates. The robot's hardware is detailed in the included files. MiniCARL
- * bots have been designed to be operated via bluetooth using Adafruit's
- * Bluefruit controller app. This file was adapted from Adafruit's Feather
- * bluetooth example:
- * {{ URL HERE }}
+ * bots have been designed to be operated via Bluetooth using Adafruit's
+ * Bluefruit controller app.
  *
  * {{ LICENSE INFO HERE }}
  */
@@ -63,7 +60,6 @@ void setup(void) {
     // Setup bluetooth and wait for connection
     initializeBluetooth(ble, BOT_NAME);
     // start Serial
-    //Serial.begin(9600);
 }
 
 // to be run repeatedly indefinitely

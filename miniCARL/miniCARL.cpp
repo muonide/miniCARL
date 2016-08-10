@@ -111,9 +111,6 @@ void initializeBluetooth(Adafruit_BluefruitLE_SPI& ble, const String name) {
            << F("Switching to DATA mode!\n")
            << F("*****************");
     ble.setMode(BLUEFRUIT_MODE_DATA);
-
-    // close the serial port
-    //Serial.end();
 }
 
 /**
@@ -271,37 +268,3 @@ void printHex(const uint8_t* data, const uint32_t numBytes) {
     }
     Serial.println();
 }
-
-/**
- * moves the motors given a cylindrical vector
- * @param cyl           a cylindrical vector
- */
-/*
-void move(const cyl_vector& cyl) {
-    Serial << F("void move(const cyl_vector&) called!\n");
-    double min_frac = 0.1; // fraction of vector length which maps to zero
-
-    // The speed depends on the magnitude of the z component as compared to the vector length,
-    // converted to a uint8_t (implicitly)
-    uint8_t speed = (abs(cyl.z) >= min_frac * cyl.length() ? (abs(cyl.z) / cyl.length() * MAX_SPEED_LEVEL) : 0);
-    
-    // The differential is the multipier that makes the wheels spin at different speeds at
-    // different input angles.
-    // 1 if theta <= 0, else --> 0 as theta --> +pi/2, and 0 for theta >= +pi/2
-    double A_diff = (cyl.theta <= 0 ? 1 : (cyl.theta >= pi/2 ? 0 : (pi - cyl.theta) / pi));
-    // 1 if theta >= 0, else --> 0 as theta --> -pi/2, and 0 for theta <= -pi/2
-    double B_diff = (cyl.theta >= 0 ? 1 : (cyl.theta <= -pi/2 ? 0 : (pi + cyl.theta) / pi));
-
-    // if the z coordinate is negative, reverse the direction
-    //motor A
-    digitalWrite(AIN2, (cyl.z < 0 ? HIGH : LOW));
-    digitalWrite(AIN1, (cyl.z < 0 ? LOW : HIGH));
-    // motor B
-    digitalWrite(BIN2, (cyl.z < 0 ? HIGH : LOW));
-    digitalWrite(BIN1, (cyl.z < 0 ? LOW : HIGH));
-
-    // use the differential to set the PWM speeds
-    analogWrite(PWMA, static_cast<uint8_t>(speed * A_diff));
-    analogWrite(PWMB, static_cast<uint8_t>(speed * B_diff));
-}
-*/

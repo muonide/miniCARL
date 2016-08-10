@@ -28,7 +28,7 @@
 
 // pi (for angular calculations)
 const double pi = 2*asin(1);
-// Android or iOS (set with jumper on board)
+// set Android or iOS accelerometer data parsing (set with jumper on board)
 // has to be extern to make the compiler happy
 extern bool IS_ANDROID;
 // Android/iOS selector jumper pin
@@ -111,10 +111,11 @@ class BLE_packet {
     }
 };
 
-// forward declaration of vector structs so that each can implicitly convert to the other
+// forward declaration of vector structs
 class cart_vector;
 class cyl_vector;
 
+// define them first so the compiler knows the structure
 /**
  * general purpose rectangular/Cartesian vector struct (x, y, z)
  */
@@ -173,6 +174,7 @@ class cyl_vector {
     void read_from_packet(const BLE_packet& packet);
 };
 
+// define the conversion operators
 /**
  * allows implicit conversion of cartesian vectors to cylindrical vectors
  */
@@ -294,12 +296,10 @@ Console& operator<<(Console& port, const cart_vector& vect) {
 /*
  * stream-like insertion of cylindrical vectors
  */
-/*
 template <class Console>
 Console& operator<<(Console& port, const cyl_vector& vect) {
     port << F("(") << vect.r << F(", ") << vect.theta << F(", ") << vect.z << F(")");
     return port;
 }
-*/
 
 #endif

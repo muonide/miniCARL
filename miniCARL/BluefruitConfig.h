@@ -1,4 +1,7 @@
-// COMMON SETTINGS
+#ifndef BLUEFRUITCONFIG_H
+    #define BLUEFRUITCONFIG_H
+
+// BLUEFRUIT CONFIGURATION
 // ----------------------------------------------------------------------------------------------
 // These settings are used in both SW UART, HW UART and SPI mode
 // ----------------------------------------------------------------------------------------------
@@ -46,3 +49,5 @@ const uint8_t PACKET_BUTTON_LEN = 5; // length of controller button packets
 const uint8_t PACKET_COLOR_LEN = 6; // length of color picker packets
 const uint8_t PACKET_LOCATION_LEN = 15; // length of GPS location packets
 const uint8_t READ_BUFSIZE = 20; // length of the read buffer for incoming packets
+
+#endif
