@@ -32,7 +32,7 @@ const double pi = 2*asin(1);
 // has to be extern to make the compiler happy
 extern bool IS_ANDROID;
 // Android/iOS selector jumper pin
-const uint8_t OS_SELECT = 13;
+const uint8_t OS_SELECT = A0;
 // motor A pins
 const uint8_t PWMA = 5; //Speed control
 const uint8_t AIN1 = 9; //Direction
