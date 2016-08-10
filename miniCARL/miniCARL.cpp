@@ -25,11 +25,11 @@ void move(const cart_vector& cart) {
 
     // if the z coordinate is negative, reverse the direction
     //motor A
-    digitalWrite(AIN1, (cart.z < 0 ? LOW : HIGH));
-    digitalWrite(AIN2, (cart.z < 0 ? HIGH : LOW));
+    digitalWrite(AIN1, (cart.z < 0 ? HIGH : LOW));
+    digitalWrite(AIN2, (cart.z < 0 ? LOW : HIGH));
     // motor B
-    digitalWrite(BIN1, (cart.z < 0 ? LOW : HIGH));
-    digitalWrite(BIN2, (cart.z < 0 ? HIGH : LOW));
+    digitalWrite(BIN1, (cart.z < 0 ? HIGH : LOW));
+    digitalWrite(BIN2, (cart.z < 0 ? LOW : HIGH));
 
     // use the differential to set the PWM speeds
     analogWrite(PWMA, static_cast<uint8_t>(speed * A_diff));
